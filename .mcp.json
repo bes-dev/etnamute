@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "mcpdoc": {
+      "type": "stdio",
+      "command": "mcpdoc",
+      "args": [
+        "--urls",
+        "https://docs.expo.dev/llms.txt",
+        "https://www.revenuecat.com/docs/llms.txt"
+      ]
+    }
+  }
+}

@@ -1,0 +1,49 @@
+# Dependencies
+node_modules/
+.venv/
+__pycache__/
+
+# Expo
+.expo/
+ios/
+android/
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+
+# Build artifacts
+*.ipa
+*.aab
+*.apk
+build/
+
+# Environment
+.env
+.env.deploy
+.env.local
+.env.*.local
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Logs
+*.log
+
+# Fastlane
+fastlane/report.xml
+fastlane/test_output/
+
+# Greenlight
+.greenlight/
+
+# Generated apps
+apps/

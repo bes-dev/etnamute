@@ -38,7 +38,7 @@ Every section must have a source tag:
 - `[DEFAULT]` — pipeline default (user skipped)
 - `[INFERRED]` — derived from answers
 
-**Show the user a summary:**
+**Show the user a summary (in the user's language — match the language of their initial request):**
 
 ```
 ## PRD: [App Name]
@@ -56,10 +56,25 @@ Every section must have a source tag:
 ### Research highlights:
 - [key insights]
 
-Всё верно? Можно запускать сборку, или хотите что-то изменить?
 ```
 
-**BLOCKING**: Do NOT proceed until the user explicitly approves.
+**After showing the summary, ask for approval via `AskUserQuestion` (in the user's language):**
+
+```
+question: "PRD is ready. Start building?"
+header: "PRD"
+options:
+  - label: "Start building"
+    description: "PRD approved, proceed to planning and implementation"
+  - label: "Need changes"
+    description: "I want to discuss or modify the spec first"
+  - label: "Show full PRD"
+    description: "I want to read the full document before deciding"
+```
+
+If "Need changes" — ask what to change, update PRD, show summary again, ask again.
+If "Show full PRD" — output full prd.md, then ask again.
+If "Start building" — proceed to Phase 1.
 
 ---
 

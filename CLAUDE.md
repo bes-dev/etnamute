@@ -4,6 +4,12 @@
 
 ---
 
+## LANGUAGE
+
+Detect the user's language from their first message. All communication — interview questions, summaries, confirmations, error messages — MUST be in that language. Pipeline files and code comments stay in English.
+
+---
+
 ## PURPOSE
 
 Etnamute transforms **raw app ideas** into **publishable mobile products**. Not demos. Not toys. Not half-products.

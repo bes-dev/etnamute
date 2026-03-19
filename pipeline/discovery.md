@@ -12,16 +12,17 @@ Replace guesswork with user input. Every answer directly fills a section of the 
 
 ## INTERVIEW RULES
 
-1. **Read the user's initial idea first** — analyze it before asking anything
-2. **Generate questions and options dynamically** based on the specific idea
-3. Ask questions **one at a time** using the `AskUserQuestion` tool
-4. Maximum 2 questions per call — only when tightly related
-5. Wait for the answer before asking the next question
-6. Adapt follow-up questions based on previous answers
-7. Do NOT ask about things the user already specified in their initial message
-8. Do NOT lecture, explain the pipeline, or sell — just ask
-9. Total: 5-8 questions (fewer if the initial idea is detailed)
-10. After the last question: "Вопросы закончились. Провожу исследование рынка и готовлю спецификацию."
+1. **Detect the user's language** from their initial message — all questions, options, and messages MUST be in that language
+2. **Read the user's initial idea first** — analyze it before asking anything
+3. **Generate questions and options dynamically** based on the specific idea
+4. Ask questions **one at a time** using the `AskUserQuestion` tool
+5. Maximum 2 questions per call — only when tightly related
+6. Wait for the answer before asking the next question
+7. Adapt follow-up questions based on previous answers
+8. Do NOT ask about things the user already specified in their initial message
+9. Do NOT lecture, explain the pipeline, or sell — just ask
+10. Total: 5-8 questions (fewer if the initial idea is detailed)
+11. After the last question, tell the user you're starting research (in their language)
 
 ---
 
@@ -48,6 +49,8 @@ Initial idea → Parse for:
 
 Ask these topics in order. For each one, **generate options relevant to the user's specific idea**. Skip topics already covered by the initial message.
 
+**All examples below are in English. Generate actual questions in the user's language.**
+
 ### Q1: Clarify the Core (if the idea is vague)
 
 > Maps to: PRD §1 Overview, §4 Core Features
@@ -56,17 +59,17 @@ Ask only if the initial idea is ambiguous or could mean different things. Genera
 
 **Example for "app for runners":**
 ```
-question: "Какой тип приложения для бегунов вы имеете в виду?"
-header: "Суть"
+question: "What kind of running app do you have in mind?"
+header: "Core"
 options:
-  - label: "Трекер пробежек"
-    description: "GPS-трекинг маршрута, темпа, дистанции в реальном времени"
-  - label: "План тренировок"
-    description: "Готовые программы подготовки к забегам (5K, 10K, марафон)"
-  - label: "Беговой дневник"
-    description: "Ручной ввод тренировок, заметки, отслеживание прогресса"
-  - label: "Социальный бег"
-    description: "Поиск партнёров, групповые забеги, челленджи"
+  - label: "Run tracker"
+    description: "GPS tracking of route, pace, distance in real time"
+  - label: "Training plans"
+    description: "Pre-built programs for 5K, 10K, marathon prep"
+  - label: "Running log"
+    description: "Manual entry of workouts, notes, progress tracking"
+  - label: "Social running"
+    description: "Find partners, group runs, challenges"
 ```
 
 **Do NOT ask this if the idea is already specific** (e.g., "GPS tracker for runs with pace alerts").
@@ -79,17 +82,17 @@ Generate audience options relevant to the app's domain.
 
 **Example for a cooking app:**
 ```
-question: "Для кого это приложение?"
-header: "Аудитория"
+question: "Who is this app for?"
+header: "Audience"
 options:
-  - label: "Новички в кулинарии"
-    description: "Простые рецепты, пошаговые инструкции, базовые техники"
-  - label: "Опытные домашние повара"
-    description: "Сложные рецепты, эксперименты, планирование меню"
-  - label: "Люди на диете"
-    description: "Подсчёт калорий, фильтры по аллергенам, ЗОЖ-рецепты"
-  - label: "Занятые люди"
-    description: "Быстрые рецепты до 30 минут, минимум ингредиентов"
+  - label: "Beginner cooks"
+    description: "Simple recipes, step-by-step instructions, basic techniques"
+  - label: "Home chefs"
+    description: "Complex recipes, experimentation, meal planning"
+  - label: "Diet-conscious"
+    description: "Calorie counting, allergen filters, healthy recipes"
+  - label: "Busy people"
+    description: "Quick recipes under 30 min, minimal ingredients"
 ```
 
 ### Q3: Must-Have Features
@@ -100,18 +103,18 @@ Generate 3-4 feature options **specific to the app's domain**. Always use `multi
 
 **Example for a meditation app:**
 ```
-question: "Какие функции обязательны в первой версии?"
-header: "Фичи"
+question: "Which features are must-have for v1?"
+header: "Features"
 multiSelect: true
 options:
-  - label: "Таймер медитации"
-    description: "Настраиваемый таймер с фоновыми звуками и интервалами"
-  - label: "Готовые сессии"
-    description: "Библиотека медитаций разной длительности и тематики"
-  - label: "Трекер привычки"
-    description: "Streak, календарь, статистика регулярности практики"
-  - label: "Дыхательные упражнения"
-    description: "Визуальный гид для дыхательных техник (4-7-8, бокс и др.)"
+  - label: "Meditation timer"
+    description: "Customizable timer with ambient sounds and intervals"
+  - label: "Guided sessions"
+    description: "Library of meditations by duration and theme"
+  - label: "Habit tracker"
+    description: "Streak, calendar, practice regularity stats"
+  - label: "Breathing exercises"
+    description: "Visual guide for breathing techniques (4-7-8, box, etc.)"
 ```
 
 ### Q4: Anti-Scope
@@ -122,18 +125,18 @@ Generate anti-scope options **relevant to the domain** — things that users of 
 
 **Example for a finance tracker:**
 ```
-question: "Чего приложение точно НЕ должно делать?"
-header: "Анти-скоуп"
+question: "What should this app NOT do?"
+header: "Anti-scope"
 multiSelect: true
 options:
-  - label: "Без подключения к банкам"
-    description: "Только ручной ввод, без API банков и агрегаторов"
-  - label: "Без инвестиций"
-    description: "Только расходы/доходы, без портфелей и акций"
-  - label: "Без семейного доступа"
-    description: "Только личный бюджет, без совместных аккаунтов"
-  - label: "Без налогов"
-    description: "Никакого расчёта налогов или бухгалтерии"
+  - label: "No bank connections"
+    description: "Manual entry only, no bank APIs or aggregators"
+  - label: "No investments"
+    description: "Expenses/income only, no portfolios or stocks"
+  - label: "No family sharing"
+    description: "Personal budget only, no shared accounts"
+  - label: "No tax calculations"
+    description: "No tax filing or accounting features"
 ```
 
 ### Q5: Competitors
@@ -143,17 +146,17 @@ options:
 Ask about user's experience with existing apps in the same domain.
 
 ```
-question: "Пробовали ли вы похожие приложения? Что не устроило?"
-header: "Конкуренты"
+question: "Have you tried similar apps? What didn't work?"
+header: "Competitors"
 options:
-  - label: "Не пробовал"
-    description: "Нет опыта с аналогами"
-  - label: "Дорогие"
-    description: "Есть аналоги, но цена не устраивает"
-  - label: "Сложные"
-    description: "Есть аналоги, но они перегружены функциями"
-  - label: "Устаревшие"
-    description: "Есть аналоги, но UI/UX устарел"
+  - label: "Haven't tried any"
+    description: "No experience with alternatives"
+  - label: "Too expensive"
+    description: "Alternatives exist but overpriced"
+  - label: "Too complex"
+    description: "Alternatives exist but bloated with features"
+  - label: "Outdated"
+    description: "Alternatives exist but UI/UX feels old"
 ```
 
 The user should name specific apps in "Other" — this feeds Phase 0b search queries.
@@ -161,20 +164,20 @@ The user should name specific apps in "Other" — this feeds Phase 0b search que
 ### Q6: Monetization
 
 > Maps to: PRD §5 Monetization
-> If user chooses "Бесплатное" — skip Q7
+> If user chooses free — skip Q7
 
 ```
-question: "Приложение будет платным или бесплатным?"
-header: "Монетизация"
+question: "Free or paid app?"
+header: "Monetization"
 options:
-  - label: "Бесплатное"
-    description: "Полностью бесплатно, без подписок и покупок"
+  - label: "Free"
+    description: "Completely free, no subscriptions or purchases"
   - label: "Freemium"
-    description: "Базовые функции бесплатно, расширенные — по подписке"
-  - label: "Подписка"
-    description: "Всё по подписке"
-  - label: "Разовая покупка"
-    description: "Одна покупка навсегда"
+    description: "Basic features free, advanced behind subscription"
+  - label: "Subscription"
+    description: "Everything behind subscription"
+  - label: "One-time purchase"
+    description: "Single payment, no subscription"
 ```
 
 ### Q7: Premium Features (SKIP if free)
@@ -185,18 +188,18 @@ Generate premium feature options **based on the features from Q3**. Always use `
 
 **Example for a meditation app (based on Q3 answers):**
 ```
-question: "Что именно должно быть платным?"
-header: "Пейволл"
+question: "What exactly should be behind the paywall?"
+header: "Paywall"
 multiSelect: true
 options:
-  - label: "Премиум-сессии"
-    description: "Расширенная библиотека медитаций и курсы"
-  - label: "Продвинутая статистика"
-    description: "Детальные графики, тренды, экспорт данных"
-  - label: "Кастомизация"
-    description: "Свои звуки, темы оформления, настройка таймера"
-  - label: "Снятие лимитов"
-    description: "Неограниченное количество сохранённых сессий"
+  - label: "Premium sessions"
+    description: "Extended library of meditations and courses"
+  - label: "Advanced stats"
+    description: "Detailed charts, trends, data export"
+  - label: "Customization"
+    description: "Custom sounds, themes, timer settings"
+  - label: "Remove limits"
+    description: "Unlimited saved sessions"
 ```
 
 ### Q8: Visual Style (CONDITIONAL — skip if already clear)
@@ -207,15 +210,15 @@ Generate style options **appropriate for the app's domain**.
 
 **Example for a finance app:**
 ```
-question: "Какой визуальный стиль?"
-header: "Дизайн"
+question: "What visual style do you prefer?"
+header: "Design"
 options:
-  - label: "Строгий и деловой"
-    description: "Как Bloomberg или Revolut — тёмные тона, чёткие графики"
-  - label: "Минималистичный"
-    description: "Как Mint — светлый, чистый, много воздуха"
-  - label: "Дружелюбный"
-    description: "Как YNAB — яркие акценты, приветливый тон"
+  - label: "Dark and professional"
+    description: "Like Bloomberg or Revolut — dark tones, sharp charts"
+  - label: "Minimalist"
+    description: "Like Mint — light, clean, lots of whitespace"
+  - label: "Friendly"
+    description: "Like YNAB — bright accents, approachable tone"
 ```
 
 ### Q9: Language (ALWAYS)
@@ -223,18 +226,18 @@ options:
 > Maps to: PRD §7 Technical Constraints — localization
 
 ```
-question: "На каком языке будет интерфейс приложения?"
-header: "Язык"
+question: "What language should the app UI be in?"
+header: "Language"
 options:
   - label: "English"
-    description: "Только английский"
-  - label: "Язык запроса"
-    description: "На том языке, на котором вы описали идею"
-  - label: "Мультиязычное"
-    description: "Несколько языков с переключением в настройках"
+    description: "English only"
+  - label: "Same as this conversation"
+    description: "Use the language you're writing in right now"
+  - label: "Multiple languages"
+    description: "Several languages with in-app switching"
 ```
 
-If "Мультиязычное" — ask which languages in a follow-up.
+If "Multiple languages" — ask which languages in a follow-up.
 
 ---
 

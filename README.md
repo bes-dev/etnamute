@@ -12,13 +12,19 @@ Local AI-powered mobile app factory. Describe an idea → get a publishable Expo
 
 ---
 
-## Pipelines
-
-### 1. Build from scratch
+## Commands
 
 ```
-claude
-> I want an app for tracking daily water intake
+/build-app <idea>              Build a new app from an idea (interactive)
+/headless <path-to-prd>        Build from a pre-written PRD (autonomous)
+/improve-app <change request>  Modify an existing app
+/release-app <app-slug>        Build + screenshots + deploy to stores
+```
+
+### Build from scratch
+
+```
+/build-app habit tracker for students
 ```
 
 Interactive discovery interview → market research → PRD approval → autonomous build with QA.
@@ -31,33 +37,28 @@ npm install
 npx expo start
 ```
 
-### 2. Improve existing app
+### Improve existing app
 
 ```
-claude
-> Add dark mode to my water tracker
-> Fix the crash on the settings screen
-> Add subscription monetization
+/improve-app add dark mode to my water tracker
 ```
 
 Reads existing PRD and code, clarifies if needed, applies targeted changes, verifies.
 
-### 3. Build from PRD (headless)
+### Build from PRD (headless)
 
 ```
-claude
-> Headless build: path/to/my-prd.md
+/headless path/to/my-prd.md
 ```
 
 Skips the interview — builds directly from a pre-written PRD. No interactive steps. Designed for programmatic use by other AI agents.
 
 PRD must conform to `pipeline/prd-schema.md`.
 
-### 4. Release to App Store
+### Release to App Store
 
 ```
-claude
-> Prepare this app for App Store submission
+/release-app water-tracker
 ```
 
 Generates fastlane config, captures screenshots via Maestro, builds locally. Asks confirmation before submitting.
@@ -71,17 +72,9 @@ Requires: Xcode, Android SDK, fastlane, maestro, Apple/Google developer accounts
 ```
 ├── CLAUDE.md                 # Pipeline constitution
 ├── .claude/
-│   ├── skills/               # Code quality rules (auto-discovered)
+│   ├── skills/               # Code quality rules + slash commands
 │   └── rules/                # Build standards (auto-discovered)
-├── pipeline/
-│   ├── discovery.md          # Interview
-│   ├── spec.md               # PRD generation
-│   ├── prd-schema.md         # PRD format specification
-│   ├── headless.md           # Build from pre-written PRD
-│   ├── plan.md               # Implementation plan
-│   ├── qa.md                 # Ralph QA
-│   ├── release.md            # Build + deploy
-│   └── improve.md            # Modify existing app
+├── pipeline/                 # Phase instructions
 ├── scripts/                  # Utilities
 ├── .mcp.json                 # Docs MCP (Expo + RevenueCat)
 └── apps/                     # Generated apps

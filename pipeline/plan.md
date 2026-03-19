@@ -26,8 +26,9 @@ Write to `apps/<slug>/spec/plan.md`.
 
 ### 3. Tech Stack (committed, no alternatives)
 - Framework, navigation, state, storage, monetization
-- Locked: Expo SDK 53+, Expo Router v4, TypeScript, NativeWind 4, Zustand, expo-sqlite
+- Locked choices: Expo (latest SDK), Expo Router, TypeScript, NativeWind, Zustand, expo-sqlite
 - RevenueCat only if PRD §5 specifies monetization
+- **Do NOT hardcode version numbers** — M1 will resolve actual versions from `npx create-expo-app@latest`
 
 ### 4. Project Structure
 - Exact file tree for `apps/<slug>/`
@@ -52,11 +53,13 @@ If PRD §5 = free: write "No monetization — free app"
 Break into 5 milestones with checklists:
 
 **M1: Scaffold**
-- [ ] package.json with dependencies
+- [ ] Run `npx create-expo-app@latest --template blank-typescript /tmp/expo-check` to get current compatible versions
+- [ ] Create package.json with versions from the template
 - [ ] app.config.js
 - [ ] TypeScript config
+- [ ] NativeWind setup: metro.config.js, babel.config.js, global.css (fetch docs via mcpdoc first)
 - [ ] Directory structure
-- [ ] Verify: `npm install` succeeds
+- [ ] Verify: `npm install` succeeds (no `--legacy-peer-deps`)
 
 **M2: Screens**
 - [ ] Root layout + navigation

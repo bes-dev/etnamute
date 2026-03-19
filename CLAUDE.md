@@ -158,7 +158,7 @@ Improve ──[changes + verify]──▶ Done ──[more changes]──▶ Imp
 
 | Milestone | Deliverables | Ralph QA |
 |-----------|-------------|----------|
-| M1: Scaffold | package.json, config, directory structure | ≥97% |
+| M1: Scaffold | resolve versions via create-expo-app, package.json, NativeWind config, directory structure | ≥97% |
 | M2: Screens | navigation, core UI screens | ≥97% |
 | M3: Features | core functionality, data persistence | ≥97% |
 | M4: Monetization | RevenueCat, paywall, gating — **skip if free** | ≥97% |
@@ -188,9 +188,10 @@ Claude MUST:
 - Run discovery interview before building
 - Perform web research before generating PRD
 - Get explicit user approval on PRD before Phase 1
+- Resolve dependency versions from `npx create-expo-app@latest` during M1 (never hardcode)
+- Fetch API docs via mcpdoc before using ANY Expo module, NativeWind, Reanimated, or RevenueCat
 - Run Ralph QA after every milestone (≥97%)
 - Respect user's monetization choice
-- Fetch API documentation via mcpdoc before implementing SDK code
 
 Claude MUST NOT:
 - Skip the interview or web research
@@ -205,26 +206,46 @@ Claude MUST NOT:
 
 ## TECHNOLOGY STACK
 
-- **Expo SDK 53+** (React Native 0.77+), New Architecture enabled
-- **Expo Router v4** for navigation
-- **NativeWind 4** for styling
-- **React Native Reanimated 3** for animations
+Core choices (do NOT change):
+- **Expo** (latest stable SDK) with **Expo Router**
+- **NativeWind** for styling
+- **React Native Reanimated** for animations
 - **RevenueCat** for monetization (if enabled)
 - **expo-sqlite** + **AsyncStorage** for data
 - **Zustand** for state management
-- **TypeScript 5.3+**
+- **TypeScript**
+
+**CRITICAL: Do NOT hardcode SDK versions.** During M1 (Scaffold), run:
+```bash
+npx create-expo-app@latest --template blank-typescript /tmp/expo-version-check
+```
+Extract exact compatible versions from its `package.json`, then delete it. Use those versions as the baseline for the app. This ensures all dependencies are compatible with the current Expo SDK.
+
+**NativeWind setup requires** (fetch docs via mcpdoc for current instructions):
+- `metro.config.js` with `withNativeWind` wrapper
+- `babel.config.js` with `nativewind/babel` preset
+- `global.css` imported in root layout
+
+**Peer dependency conflicts**: use `"overrides"` in package.json to pin conflicting transitive deps. This is preferred over `--legacy-peer-deps` (which is forbidden).
 
 ---
 
 ## API DOCUMENTATION
 
-When implementing SDK code, **always fetch documentation first** via `mcpdoc` (`.mcp.json`).
+**MANDATORY**: Before writing ANY code that uses an Expo module or RevenueCat, fetch its documentation via `mcpdoc`. APIs change between SDK versions — your training data is likely outdated.
 
-Available sources:
-- **Expo** (docs.expo.dev) — Router, SQLite, Notifications, all SDK modules
-- **RevenueCat** (revenuecat.com/docs) — SDK setup, purchases, paywalls
+Fetch docs for:
+- Every Expo SDK module before first use (expo-sqlite, expo-file-system, expo-notifications, etc.)
+- Expo Router before setting up navigation
+- NativeWind before configuring styling
+- RevenueCat before implementing monetization
+- React Native Reanimated before writing animations
 
-Do NOT rely on memory for API details. Fetch the docs.
+Available via mcpdoc (`.mcp.json`):
+- **Expo** (docs.expo.dev)
+- **RevenueCat** (revenuecat.com/docs)
+
+**Do NOT rely on memory for API signatures, config patterns, or import paths.** They change between versions. Always fetch.
 
 ---
 

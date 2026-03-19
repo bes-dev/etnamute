@@ -1,4 +1,36 @@
 {
+  "permissions": {
+    "allow": [
+      "Bash(npm *)",
+      "Bash(npx *)",
+      "Bash(node *)",
+      "Bash(ls *)",
+      "Bash(wc *)",
+      "Bash(cat *)",
+      "Bash(mkdir apps/*)",
+      "Bash(cp apps/*)",
+      "Bash(mv apps/*)",
+      "Bash(rm apps/*)",
+      "Bash(chmod *)",
+      "Bash(find *)",
+      "Bash(head *)",
+      "Bash(tail *)",
+      "Bash(sort *)",
+      "Bash(grep *)",
+      "Bash(fastlane *)",
+      "Bash(maestro *)",
+      "Bash(cd /tmp *)",
+      "Read(/tmp/**)",
+      "Read(/private/tmp/**)",
+      "WebSearch",
+      "WebFetch(*)",
+      "mcp__mcpdoc__*"
+    ]
+  },
+  "enableAllProjectMcpServers": true,
+  "enabledMcpjsonServers": [
+    "mcpdoc"
+  ],
   "hooks": {
     "PostToolUse": [
       {

@@ -80,16 +80,6 @@ Requires: Xcode, Android SDK, fastlane, maestro, Apple/Google developer accounts
 └── apps/                     # Generated apps
 ```
 
----
 
-## Tech Stack
 
-| Component    | Technology              |
-| ------------ | ----------------------- |
-| Framework    | Expo SDK 53+            |
-| Language     | TypeScript              |
-| Navigation   | Expo Router v4          |
-| Styling      | NativeWind 4            |
-| Monetization | RevenueCat (if enabled) |
-| Storage      | expo-sqlite             |
-| State        | Zustand                 |
+Generates **Expo React Native** apps with TypeScript, NativeWind, Zustand, expo-sqlite, and optional RevenueCat monetization. SDK versions are resolved at build time from the latest stable Expo release.

@@ -1,17 +1,16 @@
 ---
 name: improve-app
-description: Make targeted changes to an existing app
+description: Add/remove features, fix bugs, redesign — keeping code clean and artifacts in sync
 disable-model-invocation: true
 ---
 
-Improve an existing app. Read `pipeline/improve.md` and follow the steps:
+Improve an existing app. Read `pipeline/improve.md` and follow ALL steps:
 
-1. Locate the app in `apps/`
-2. Read `apps/<slug>/spec/prd.md` and the current code
-3. Clarify the change via AskUserQuestion if needed
-4. Apply targeted changes
-5. Update PRD if scope changed
-6. Verify with `npx tsc --noEmit`
-7. Show summary and wait for feedback
+1. Understand — read PRD and code
+2. Clarify — ask only if ambiguous
+3. Plan — determine PRD impact, files, dead code, artifacts, version bump
+4. Apply — update PRD first, then code, clean dead code, update artifacts
+5. Verify — tsc, PRD-code consistency, no dead code, artifacts in sync
+6. Report — show versioned summary, wait for feedback
 
 Change request: $ARGUMENTS

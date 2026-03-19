@@ -218,6 +218,24 @@ options:
     description: "Как YNAB — яркие акценты, приветливый тон"
 ```
 
+### Q9: Language (ALWAYS)
+
+> Maps to: PRD §7 Technical Constraints — localization
+
+```
+question: "На каком языке будет интерфейс приложения?"
+header: "Язык"
+options:
+  - label: "English"
+    description: "Только английский"
+  - label: "Язык запроса"
+    description: "На том языке, на котором вы описали идею"
+  - label: "Мультиязычное"
+    description: "Несколько языков с переключением в настройках"
+```
+
+If "Мультиязычное" — ask which languages in a follow-up.
+
 ---
 
 ## WHAT NOT TO ASK
@@ -281,4 +299,5 @@ When user skips a question or it's not asked, use these defaults and mark as `[D
 | Backend            | None                                 |
 | Authentication     | Guest-first (no login)               |
 | Visual style       | Clean, modern, domain-appropriate    |
+| Language           | English                              |
 | Sync               | None                                 |

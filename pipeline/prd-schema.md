@@ -90,7 +90,8 @@ If monetized:
 
 ## 7. Technical Constraints
 
-- **Platform**: iOS + Android (Expo SDK 53+, Expo Router v4)
+- **Platform**: iOS + Android (Expo, latest stable SDK)
+- **Language**: <en | language of request | multi: en, ru, ... >
 - **Storage**: <expo-sqlite | AsyncStorage | both>
 - **Sync**: <none | cloud backup | multi-device>
 - **Backend**: <none | describe if needed>

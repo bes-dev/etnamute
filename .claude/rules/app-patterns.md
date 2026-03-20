@@ -56,9 +56,11 @@ Library choices and architectural patterns. When implementing any of these areas
 - **Relational data**: expo-sqlite with WAL mode enabled (`PRAGMA journal_mode = WAL`)
 - **Key-value storage**: prefer MMKV (synchronous, fast) over AsyncStorage (deprecated in newer SDKs)
 - **Auth tokens/secrets**: expo-secure-store (encrypted)
-- SQLite migrations: use `PRAGMA user_version` to track schema version
+- SQLite migrations: use `PRAGMA user_version` to track schema version, sequential `if (version < N)` blocks
+- Set `PRAGMA user_version` only at the END of all migrations — if app crashes mid-migration, it reruns safely
 - Wrap database initialization with `<SQLiteProvider onInit={migrate}>` — prevents race conditions
 - For offline-first: each entity should have a `syncStatus` field for future cloud sync readiness
+- Zustand persisted stores: always provide `version` + `migrate` — shallow merge loses nested object fields and leaves orphaned data
 
 ## Accessibility
 
@@ -66,5 +68,7 @@ Library choices and architectural patterns. When implementing any of these areas
 - Use `accessibilityRole` (or `role` prop) on all semantic elements
 - Respect `isReduceMotionEnabled()` from AccessibilityInfo — disable/simplify animations
 - Support text scaling (`allowFontScaling` — don't disable it)
-- Minimum touch target: follow platform guidelines (check via accessibility audit tools)
-- Test with screen readers periodically — automated tools catch ~30% of issues, manual testing catches the rest
+- Minimum touch target: follow platform guidelines
+- Setting `accessible={true}` on a parent View groups all children into one accessible element — changing hierarchy silently breaks this
+- When replacing components (e.g. TouchableOpacity → Pressable), transfer ALL accessibility props — they don't carry over automatically
+- Dynamic content changes (mount/unmount) need explicit announcements — `accessibilityLiveRegion` on Android, `AccessibilityInfo.announceForAccessibility()` on iOS

@@ -89,21 +89,40 @@ Execute in this order:
 - Clean all imports referencing deleted code
 - Remove from ASO description/keywords
 - Remove unused dependencies from package.json
+- If feature used fonts: search for font family name strings in ALL style objects, remove from config plugin
+- If feature had Zustand persisted state: add migration to remove fields (don't just delete from store definition — orphaned data persists)
+- If feature's screen was a deep link target: add redirect from old route (see "Renaming/removing routes" below)
 
-**5. When changing UX/design:**
+**5. When renaming or removing routes:**
+- Renaming a file in `app/` changes URLs — deep links, push notification payloads, saved bookmarks all break silently
+- Before renaming: grep codebase for the old route path string
+- After renaming: add `<Redirect>` in a stub file at the old path, or add static redirect in app.json
+- If push notifications target this route: the backend payload must be updated too — flag this to the user
+
+**6. When changing UX/design:**
 - Update PRD §6
 - Apply consistently across ALL affected screens — not just one
-- Keep design tokens (colors, spacing) in theme — no hardcoded hex values in components
-- Verify touch targets remain ≥44pt
-- Verify accessibility labels still present
-- Use `useSafeAreaInsets()` — not the deprecated SafeAreaView from RN core
-- KeyboardAvoidingView: `behavior="padding"` on iOS, `undefined` on Android
+- Keep design tokens (colors, spacing) in theme — no hardcoded values in components
+- Verify touch targets remain above platform minimums
+- Verify accessibility labels and roles survived the change — component replacement drops them silently
+- If changing component hierarchy: check that `accessible={true}` groupings still make sense
 
-**6. Clean up dead code:**
+**7. When modifying data models:**
+- SQLite: add migration block with incremented `user_version` — existing user data must survive
+- Zustand persisted stores: bump `version` and add `migrate` function — shallow merge loses nested fields
+- Never rename or change type of a persisted field without migration — causes data loss or runtime crashes
+
+**8. When adding new dependencies:**
+- Use `npx expo install <package>` — not `npm install` (Expo resolves compatible versions)
+- Run `npx expo install --check` after adding — exits non-zero if incompatible
+- Fetch docs via mcpdoc before using the new library
+
+**9. Clean up dead code:**
 - Delete unused files — never comment out code
 - Remove orphaned imports
 - Remove unused dependencies from package.json
 - Remove orphaned navigation routes
+- Remove orphaned assets (images, fonts, sounds no longer referenced)
 
 **7. Update artifacts:**
 - `app.config.js` — bump version
@@ -114,11 +133,14 @@ Execute in this order:
 
 ### Step 6: Verify
 
-1. `npx tsc --noEmit` — no TypeScript errors
-2. PRD matches code — every feature in PRD exists, nothing in code that's not in PRD
-3. No dead code — no unused imports, files, dependencies
-4. Artifacts in sync — ASO description matches actual features
-5. If UX change — styles consistent across all affected screens
+1. `npx tsc --noEmit` — no TypeScript errors (with Typed Routes enabled, also catches broken route references)
+2. `npx expo install --check` — all dependencies compatible with current SDK
+3. PRD matches code — every feature in PRD exists, nothing in code that's not in PRD
+4. No dead code — no unused imports, files, dependencies, assets
+5. Artifacts in sync — ASO description matches actual features
+6. If routes changed — old routes have redirects or stubs
+7. If data model changed — migrations added for SQLite and/or Zustand persisted stores
+8. If UX changed — styles consistent across all affected screens, accessibility intact
 
 ### Step 7: Report
 

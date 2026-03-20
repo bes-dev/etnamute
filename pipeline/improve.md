@@ -6,79 +6,121 @@ Add features, remove features, optimize UX, fix bugs — while keeping the codeb
 
 ## EXECUTION
 
-### Step 1: Understand
+### Step 1: Understand the codebase
 
-1. Find the app in `apps/`
-2. Read `apps/<slug>/spec/prd.md` — current spec is the source of truth
-3. Scan the code — understand architecture, patterns, dependencies
-4. Identify what the requested change touches: which files, which PRD sections, which artifacts
+Read files in this order — each answers a specific question:
 
-If PRD is missing, reconstruct from package.json, app.config.js, and screen files before proceeding.
+1. `apps/<slug>/spec/prd.md` — what was supposed to be built
+2. `package.json` — dependencies, SDK versions, scripts
+3. `app.config.js` / `app.json` — Expo config, plugins, permissions
+4. `app/_layout.tsx` — root layout: providers, fonts, global wrappers
+5. `app/` directory tree — file-based routing IS the navigation map
+6. `tsconfig.json` — path aliases, strict mode
+7. `src/` structure — determine pattern:
+   - **Flat**: `components/`, `hooks/`, `services/` at top level
+   - **Feature-based**: `features/auth/`, `features/feed/` with co-located code
 
-### Step 2: Clarify (if needed)
+Identify state management: Zustand (`create()`, `useStore`), Context (`createContext`, `Provider`), or other.
 
-Use `AskUserQuestion` only if the request is ambiguous. Generate options specific to the app — not generic.
+### Step 2: Assess code health
 
-Skip if the request is already specific.
+Before adding code on top, check existing quality:
 
-### Step 3: Plan the change
+- [ ] Lists use FlatList/FlashList (not ScrollView + .map for dynamic data)
+- [ ] No barrel exports (index.ts re-exporting everything)
+- [ ] No inline styles (should use StyleSheet.create or styling library)
+- [ ] useEffect cleanups present for timers/subscriptions
+- [ ] No console.log in production code
+- [ ] Components under 250-300 lines
+- [ ] No `renderThing()` functions masquerading as components
 
-Before writing any code, determine:
+If critical issues found in the area being modified — fix them as part of the change. Don't fix unrelated areas.
 
-1. **PRD impact** — which sections change (features added/removed, monetization, screens)
+### Step 3: Clarify (if needed)
+
+Use `AskUserQuestion` only if the request is ambiguous. Generate options specific to the app. Skip if already specific.
+
+### Step 4: Plan the change
+
+Before writing code:
+
+1. **PRD impact** — which sections change (§4 features, §5 monetization, §6 UX, §2 non-goals)
 2. **Files to modify** — list specific files
-3. **Files to create/delete** — new screens, services, components
-4. **Dead code** — what becomes unused after this change (remove it, don't comment out)
-5. **Artifacts to update** — which of these need changes:
-   - `spec/prd.md` — feature list, non-goals, screens
+3. **Files to create** — new screens, components, hooks, services
+4. **Files to delete** — screens, components becoming unused
+5. **Dead code** — imports, types, dependencies that become orphaned
+6. **Refactoring needed** — if a component you're modifying exceeds 250 lines or has 3+ useState, split it as part of this change
+7. **Artifacts to update**:
+   - `spec/prd.md`
    - `aso/description.md`, `aso/keywords.txt` — if user-facing functionality changed
-   - `research/positioning.md` — if competitive positioning shifted
-   - `marketing/` — if launch messaging needs refresh
+   - `marketing/` — if core value prop changed
    - `README.md` — if features or setup changed
-   - `LAUNCH_CHECKLIST.md` — if new setup steps needed
    - `privacy_policy.md` — if data collection changed
-6. **Version bump** — determine semver:
-   - Bug fix → patch (1.0.0 → 1.0.1)
-   - New feature / UX change → minor (1.0.0 → 1.1.0)
-   - Breaking change / redesign → major (1.0.0 → 2.0.0)
+8. **Version bump** — patch (bugfix), minor (feature/UX), major (redesign/breaking)
 
-### Step 4: Apply changes
+### Step 5: Apply changes
 
 Execute in this order:
 
-1. **Update PRD first** — `spec/prd.md` is the source of truth. Mark changes:
-   ```
-   > [UPDATED <date>]: Added/removed/changed <what> — <why>
-   ```
+**1. Update PRD first** — source of truth:
+```
+> [UPDATED <date>]: Added/removed/changed <what> — <why>
+```
 
-2. **Modify code** — only affected files, preserve existing patterns:
-   - Follow the same code style (indentation, naming, file structure)
-   - Reuse existing components/hooks/services — don't create duplicates
-   - When removing a feature: delete all related files, imports, navigation entries, types
-   - When adding a feature: place files consistent with existing structure
-   - Fetch docs via mcpdoc before using any new SDK module
+**2. Modify code** — follow existing patterns:
+- Match the project's architecture (flat vs feature-based)
+- Reuse existing components/hooks — don't create duplicates
+- Route files in `app/` should be thin re-exports: `export { Screen as default } from '@/features/...'`
+- Extract a custom hook when 3+ useState/useEffect are logically related
+- Replace `renderThing()` functions with proper `<Thing />` components
+- Use StyleSheet.create or the project's styling approach — no inline styles
+- Fetch docs via mcpdoc before using any new SDK module
 
-3. **Clean up dead code** — after any removal:
-   - Delete unused components, hooks, services, types
-   - Remove unused imports
-   - Remove orphaned navigation routes
-   - Remove unused dependencies from package.json
+**3. When adding a feature:**
+- Add to PRD §4 with Purpose/Action/Response/Success
+- Create files following existing structure
+- Add navigation entry in the appropriate layout
+- Add to ASO description if user-facing
 
-4. **Update artifacts**:
-   - `app.config.js` — bump version
-   - `aso/` — update description/keywords if functionality changed
-   - `marketing/` — update if core value prop changed
-   - `README.md` — update feature list if changed
-   - `privacy_policy.md` — update if data handling changed
+**4. When removing a feature:**
+- Remove from PRD §4
+- Delete screen file(s) and navigation entry
+- Delete related components, hooks, services, types
+- Clean all imports referencing deleted code
+- Remove from ASO description/keywords
+- Remove unused dependencies from package.json
 
-### Step 5: Verify
+**5. When changing UX/design:**
+- Update PRD §6
+- Apply consistently across ALL affected screens — not just one
+- Keep design tokens (colors, spacing) in theme — no hardcoded hex values in components
+- Verify touch targets remain ≥44pt
+- Verify accessibility labels still present
+- Use `useSafeAreaInsets()` — not the deprecated SafeAreaView from RN core
+- KeyboardAvoidingView: `behavior="padding"` on iOS, `undefined` on Android
+
+**6. Clean up dead code:**
+- Delete unused files — never comment out code
+- Remove orphaned imports
+- Remove unused dependencies from package.json
+- Remove orphaned navigation routes
+
+**7. Update artifacts:**
+- `app.config.js` — bump version
+- `aso/` — sync description/keywords with actual features
+- `marketing/` — update if value prop changed
+- `README.md` — update feature list
+- `privacy_policy.md` — update if data handling changed
+
+### Step 6: Verify
 
 1. `npx tsc --noEmit` — no TypeScript errors
-2. Check PRD matches the code — every feature in PRD exists in code, nothing in code that's not in PRD
-3. Check no dead code left — no unused imports, files, dependencies
-4. Check artifacts are in sync — ASO description matches actual features
+2. PRD matches code — every feature in PRD exists, nothing in code that's not in PRD
+3. No dead code — no unused imports, files, dependencies
+4. Artifacts in sync — ASO description matches actual features
+5. If UX change — styles consistent across all affected screens
 
-### Step 6: Report
+### Step 7: Report
 
 Show summary (in user's language):
 
@@ -93,73 +135,34 @@ Show summary (in user's language):
 - Created: <file list>
 - Deleted: <file list>
 
+### Code health
+- <any refactoring done as part of this change>
+
 ### Artifacts updated
-- <list of updated artifacts>
+- <list>
 
 ### Dead code removed
-- <list of cleaned up files/imports>
+- <list>
 
 Anything else to change?
 ```
 
 Wait for feedback:
-- More changes → loop back to Step 2
+- More changes → loop back to Step 3
 - Done → complete
 - Revert → undo changes
 
 ---
 
-## REMOVING FEATURES
-
-When removing a feature:
-
-1. Remove from `spec/prd.md` §4 (Core Features)
-2. Delete the screen file(s)
-3. Remove navigation entry from layout
-4. Delete related components, hooks, services
-5. Remove related types
-6. Clean imports across all files that referenced removed code
-7. Remove from ASO description/keywords if it was mentioned
-8. Remove unused dependencies from package.json
-9. Run `npx tsc --noEmit` to verify nothing is broken
-
-**Never** leave commented-out code, unused imports, or orphaned files.
-
----
-
-## ADDING FEATURES
-
-When adding a feature:
-
-1. Add to `spec/prd.md` §4 with Purpose/Action/Response/Success
-2. Fetch relevant API docs via mcpdoc
-3. Create files following existing project structure and patterns
-4. Reuse existing components/hooks — don't duplicate
-5. Add navigation entry
-6. Add to ASO description if user-facing
-7. Run `npx tsc --noEmit` to verify
-
----
-
-## REDESIGN / UX CHANGES
-
-When changing visual style or UX:
-
-1. Update `spec/prd.md` §6 (UX Philosophy)
-2. Identify all affected screens and components
-3. Apply changes consistently across the entire app — not just one screen
-4. Check touch targets remain ≥44pt
-5. Check accessibility labels still present
-6. Update screenshots reference in ASO if layout changed significantly
-
----
-
 ## RULES
 
-- PRD is the source of truth — update it first, then code
-- Minimal changes — don't refactor unrelated code
-- No dead code — delete what's unused
-- No duplicates — reuse existing patterns
-- Artifacts in sync — ASO, marketing, docs reflect current state
-- Version bump on every change
-- Fetch docs before using new SDK modules
+- **PRD first** — update spec before code
+- **Understand before changing** — read codebase structure before writing
+- **Follow existing patterns** — match architecture, naming, style
+- **No dead code** — delete what's unused, never comment out
+- **No duplicates** — reuse existing components/hooks
+- **Scope discipline** — one change per request, don't refactor unrelated code
+- **Artifacts in sync** — ASO, marketing, docs reflect current state
+- **Version bump** on every change
+- **Fetch docs** before using new SDK modules
+- **Fix what you touch** — if code you're modifying has quality issues, fix them; leave the rest alone

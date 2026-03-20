@@ -1,265 +1,259 @@
 # Phase 5: Release
 
-Build, capture screenshots, and submit to App Store / Google Play. All local, no cloud services.
+Single command: build, sign, upload, submit for review. Both platforms.
+
+**One-time setup required** (see FIRST-TIME SETUP below). After that, `/release-app` handles everything.
 
 ---
 
 ## PRE-FLIGHT CHECKS
 
-Before doing anything, verify:
+1. **`.env.deploy` exists** — `test -f apps/<slug>/.env.deploy`. Do NOT read contents.
+2. **Tools installed** — check with `which`: `fastlane`, `xcrun` (iOS), `java` (Android)
+3. **App records exist** — ask user: "Have you created the app in App Store Connect and Google Play Console?" If no → show FIRST-TIME SETUP and stop.
 
-1. **`.env.deploy` exists** — check with `test -f apps/<app-slug>/.env.deploy`. Do NOT read its contents (credentials).
-2. **Tools installed** — check each with `which`:
-   - `fastlane`
-   - `maestro`
-   - `xcrun simctl` (iOS)
-   - `java` (Android)
-3. **Expo prebuild not stale** — check `ios/` and `android/` exist
-
-If `.env.deploy` is missing, generate `.env.deploy.example` and tell the user to fill it in. Stop and wait.
-
-If a tool is missing, tell the user what to install and stop:
-```
-brew install fastlane
-curl -fsSL "https://get.maestro.mobile.dev" | bash
-```
+If `.env.deploy` missing → generate `.env.deploy.example` and stop.
 
 ---
 
-## STEP 1: GENERATE FASTLANE CONFIG
+## EXECUTION
 
-Create from app.config.js and PRD:
+### Step 1: Generate fastlane config
 
-### `fastlane/Appfile`
+Create `apps/<slug>/fastlane/` with:
 
+**Appfile** — from app.config.js + env:
 ```ruby
-app_identifier("<bundle-id-from-app-config>")
-apple_id(ENV["APPLE_ID"])
-team_id(ENV["APPLE_TEAM_ID"])
-```
-
-### `fastlane/Fastfile`
-
-```ruby
-default_platform(:ios)
-
-platform :ios do
-  lane :build do
-    match(type: "appstore", readonly: true) if ENV["MATCH_GIT_URL"]
-    build_app(
-      workspace: "./ios/<AppName>.xcworkspace",
-      scheme: "<AppName>",
-      export_method: "app-store",
-      output_directory: "./build"
-    )
-  end
-
-  lane :screenshots do
-    sh("maestro test --test-output-dir ../screenshots/raw .maestro/screenshots.yaml")
-  end
-
-  lane :release do
-    build
-    deliver(
-      force: true,
-      skip_screenshots: false,
-      metadata_path: "./fastlane/metadata/ios",
-      screenshots_path: "./screenshots/raw"
-    )
-  end
+for_platform :ios do
+  app_identifier(ENV["APP_IDENTIFIER"])
+  team_id(ENV["TEAM_ID"])
+  itc_team_id(ENV["ITC_TEAM_ID"])
 end
 
-platform :android do
-  lane :build do
-    gradle(task: "bundle", build_type: "Release", project_dir: "./android")
-  end
-
-  lane :release do
-    build
-    supply(
-      aab: "./android/app/build/outputs/bundle/release/app-release.aab",
-      track: "production",
-      metadata_path: "./fastlane/metadata/android"
-    )
-  end
+for_platform :android do
+  json_key_file(ENV["SUPPLY_JSON_KEY"])
+  package_name(ENV["ANDROID_PACKAGE_NAME"])
 end
 ```
 
-Replace `<AppName>` with actual name from app.config.js.
+**Fastfile** — generate the production Fastfile with:
 
----
+iOS `deploy` lane:
+1. Load API key from env (base64-encoded .p8)
+2. Query latest build number from App Store Connect, increment
+3. Create temporary keychain, import base64 cert + provisioning profile from env
+4. Run `cocoapods` for ios/Podfile
+5. Build IPA with manual signing via xcargs (don't mutate .xcodeproj)
+6. Upload metadata + screenshots + IPA via `deliver`
+7. Submit for review with compliance flags pre-answered
+8. Cleanup: delete temporary keychain and decoded files
 
-## STEP 2: CONVERT ASO → FASTLANE METADATA
+Android `deploy` lane:
+1. Decode keystore from base64 env to temp file
+2. Read and increment versionCode in build.gradle
+3. Build AAB with injected signing properties
+4. Upload to Google Play via `supply`
+5. Cleanup: delete temp keystore
 
-### iOS (`fastlane/metadata/ios/en-US/`)
+Combined `deploy_all` lane that runs both sequentially.
 
-| Source | Target | Transform |
-|--------|--------|-----------|
-| `aso/app_title.txt` | `name.txt` | Copy as-is |
-| `aso/subtitle.txt` | `subtitle.txt` | Copy as-is |
-| `aso/description.md` | `description.txt` | Strip markdown |
-| `aso/keywords.txt` | `keywords.txt` | Copy as-is |
-| privacy policy URL | `privacy_url.txt` | URL only |
+**Key Fastfile details:**
+- iOS signing: temporary keychain + `xcargs: "CODE_SIGN_STYLE='Manual'"` — never mutate .xcodeproj
+- iOS compliance: `submission_information` hash with `export_compliance_uses_encryption: false`
+- iOS: always include `release_notes.txt` (required for submit_for_review)
+- iOS: set `precheck_include_in_app_purchases: false` when using API keys
+- Android: use `changes_not_sent_for_review: true` to avoid common supply error
+- Android: AAB format mandatory (not APK)
+- Build numbers: auto-increment from store (iOS: `app_store_build_number`, Android: parse build.gradle)
+- Error retry: wrap deliver/supply in retry block (3 attempts, 30s delay)
 
-### Android (`fastlane/metadata/android/en-US/`)
+### Step 2: Convert ASO to fastlane metadata
 
-| Source | Target | Transform |
-|--------|--------|-----------|
-| `aso/app_title.txt` | `title.txt` | Copy as-is |
-| `aso/subtitle.txt` | `short_description.txt` | Copy as-is |
-| `aso/description.md` | `full_description.txt` | Strip markdown |
+Read `apps/<slug>/aso/` and generate:
 
----
+**iOS metadata** (`fastlane/metadata/en-US/`):
+| Source | Target |
+|--------|--------|
+| `aso/ios/title.txt` | `name.txt` |
+| `aso/ios/subtitle.txt` | `subtitle.txt` |
+| `aso/ios/keywords.txt` | `keywords.txt` |
+| `aso/ios/description.txt` | `description.txt` |
+| privacy policy URL | `privacy_url.txt` |
+| version change notes | `release_notes.txt` |
 
-## STEP 3: GENERATE MAESTRO SCREENSHOT FLOWS
+**Android metadata** (`fastlane/metadata/android/en-US/`):
+| Source | Target |
+|--------|--------|
+| `aso/android/title.txt` | `title.txt` |
+| `aso/android/short_description.txt` | `short_description.txt` |
+| `aso/android/full_description.txt` | `full_description.txt` |
+| version change notes | `changelogs/default.txt` |
 
-Create `.maestro/screenshots.yaml` based on the PRD's key screens (§6).
+Also generate: `copyright.txt`, `primary_category.txt` from PRD.
 
-For each screen in the PRD, generate a step that:
-1. Navigates to the screen
-2. Waits for content to load
-3. Takes a screenshot with a descriptive name
+### Step 3: Capture screenshots (if Maestro installed)
 
-### Template
+Generate `.maestro/screenshots.yaml` from PRD key screens (§6).
 
-```yaml
-appId: <bundle-id>
----
-- launchApp:
-    clearState: true
-
-# Onboarding
-- assertVisible: "<first onboarding element>"
-- takeScreenshot: "01-onboarding"
-
-# Home
-- tapOn: "<skip/continue button>"
-- assertVisible: "<home screen element>"
-- takeScreenshot: "02-home"
-
-# Core Feature
-- tapOn: "<feature entry point>"
-- assertVisible: "<feature screen element>"
-- takeScreenshot: "03-feature"
-
-# Settings
-- tapOn: "<settings tab or button>"
-- assertVisible: "Settings"
-- takeScreenshot: "04-settings"
-```
-
-### Rules for generating flows
-
-- Use `testID` props from the actual code (read the screens first)
-- Use `assertVisible` before every `takeScreenshot` to ensure screen is loaded
-- Name screenshots with numeric prefix for ordering: `01-`, `02-`, etc.
-- Generate 4-6 screenshots covering: onboarding, home, core feature, detail, settings
-- If monetization enabled: include paywall screenshot
-- Keep the flow linear — no branching, no error scenarios
-
----
-
-## STEP 4: GENERATE SUPPORT FILES
-
-### `.env.deploy.example`
-
-```
-# Apple
-APPLE_ID=
-APPLE_TEAM_ID=
-MATCH_GIT_URL=
-MATCH_PASSWORD=
-
-# Google Play
-SUPPLY_JSON_KEY=./google-play-key.json
-
-# Android Keystore
-KEYSTORE_PATH=./release.keystore
-KEYSTORE_PASSWORD=
-KEY_ALIAS=
-KEY_PASSWORD=
-```
-
-### `DEPLOY.md`
-
-Generate with:
-
-1. Prerequisites checklist (tools + accounts)
-2. First-time setup (certificates, keystore, API keys)
-3. Screenshot capture commands
-4. Build commands (iOS + Android)
-5. Submit commands
-
----
-
-## STEP 5: RUN (Claude executes these)
-
-After generating all config:
+Run on correct simulator for required sizes:
+- **iOS**: iPhone 16 Pro Max simulator (1320×2868) — mandatory base size
+- **Android**: 1080×1920 recommended
 
 ```bash
-cd apps/<app-slug>
-
-# 1. Prebuild native projects
-npx expo prebuild --clean
-
-# 2. Capture screenshots (requires running simulator)
 maestro test --test-output-dir ./screenshots/raw .maestro/screenshots.yaml
-
-# 3. Build iOS
-fastlane ios build
-
-# 4. Build Android
-fastlane android build
 ```
 
-**Stop before submit.** Ask the user:
+Map output to fastlane directory: `fastlane/screenshots/en-US/<Device>-<Name>.png`
+
+Skip if Maestro not installed — note in output that screenshots need manual capture.
+
+### Step 4: Prebuild native projects
+
+```bash
+npx expo prebuild --clean
+```
+
+Add `ITSAppUsesNonExemptEncryption = NO` to `ios/<AppName>/Info.plist` if not present (skips encryption compliance question).
+
+### Step 5: Build and submit
+
+Ask user confirmation via `AskUserQuestion`:
+```
+question: "Ready to build and submit to stores?"
+header: "Release"
+options:
+  - label: "Both platforms"
+    description: "Build and submit iOS + Android"
+  - label: "iOS only"
+    description: "Build and submit to App Store only"
+  - label: "Android only"
+    description: "Build and submit to Google Play only"
+  - label: "Build only (don't submit)"
+    description: "Build binaries but don't upload to stores"
+```
+
+Then run:
+```bash
+cd apps/<slug>
+bundle exec fastlane deploy_all --env deploy
+# or: bundle exec fastlane ios deploy --env deploy
+# or: bundle exec fastlane android deploy --env deploy
+```
+
+### Step 6: Report
 
 ```
-Билды готовы. Скриншоты сохранены в screenshots/raw/.
+## Release Complete
 
-Хотите отправить в App Store и Google Play?
-- iOS: fastlane ios release
-- Android: fastlane android release
+### iOS
+- Build number: <N>
+- Status: Submitted for review
+- Phased release: enabled
+- Estimated review: 1-3 days
+
+### Android
+- Version code: <N>
+- Track: production
+- Status: Under review
+
+### Next steps
+- Monitor review status in App Store Connect / Play Console
+- iOS changes to title/subtitle take effect after review approval
+- Google Play metadata changes take 4-8 weeks for full indexing
 ```
 
-Only run `release` lanes after explicit user confirmation.
+---
+
+## .env.deploy.example
+
+```bash
+# ──── iOS ────
+APP_IDENTIFIER=com.example.myapp
+TEAM_ID=ABCDE12345
+ITC_TEAM_ID=18742801
+XCODE_SCHEME=MyApp
+
+# App Store Connect API Key
+APP_STORE_CONNECT_API_KEY_KEY_ID=
+APP_STORE_CONNECT_API_KEY_ISSUER_ID=
+APP_STORE_CONNECT_API_KEY_KEY=          # base64-encoded .p8 content
+APP_STORE_CONNECT_API_KEY_IS_KEY_CONTENT_BASE64=true
+
+# Code Signing
+CERTIFICATE_BASE64=                     # base64-encoded .p12
+CERT_PASSWORD=
+PROVISIONING_PROFILE_BASE64=            # base64-encoded .mobileprovision
+PROVISIONING_PROFILE_NAME=              # profile name as shown in Xcode
+KEYCHAIN_PASSWORD=temp_keychain_pass
+
+# ──── Android ────
+ANDROID_PACKAGE_NAME=com.example.myapp
+SUPPLY_JSON_KEY=fastlane/play-store-key.json
+
+# Signing
+ANDROID_KEYSTORE_BASE64=               # base64-encoded .keystore
+ANDROID_KEYSTORE_PASSWORD=
+ANDROID_KEY_ALIAS=
+ANDROID_KEY_PASSWORD=
+```
+
+---
+
+## FIRST-TIME SETUP
+
+Show this to the user if they haven't set up before. These steps are manual and done once.
+
+### Apple (≈15 min)
+
+1. Enroll in Apple Developer Program ($99/year) at developer.apple.com
+2. Create App Store Connect API Key:
+   - App Store Connect → Users → Integrations → App Store Connect API
+   - Create Team Key with **App Manager** role
+   - Note Key ID + Issuer ID, download .p8 file (one-time download!)
+   - Base64 encode: `base64 -i AuthKey_XXXXX.p8`
+3. Create app record in App Store Connect (bundle ID, name, SKU)
+4. Create Distribution certificate in Developer Portal → export as .p12
+   - Base64 encode: `base64 -i Distribution.p12`
+5. Create App Store provisioning profile → download
+   - Base64 encode: `base64 -i AppStore.mobileprovision`
+6. Set App Privacy Details in App Store Connect (cannot be automated)
+7. Add all values to `.env.deploy`
+
+### Google Play (≈15 min)
+
+1. Register Google Play Developer account ($25 one-time)
+2. Create app in Play Console (All apps → Create app)
+3. Complete App Content sections: privacy policy, content rating (IARC), data safety, target audience
+4. **Upload first AAB manually** to internal testing track (required — API cannot do first upload)
+5. Create Google Cloud service account:
+   - Cloud Console → enable "Google Play Android Developer API"
+   - IAM → Service Accounts → Create → download JSON key
+6. Link service account in Play Console → Users & Permissions → Invite → paste email → Admin permissions
+7. Generate upload keystore: `keytool -genkeypair -v -storetype PKCS12 -keystore upload.keystore -alias my-key -keyalg RSA -keysize 2048 -validity 10000`
+   - Base64 encode: `base64 -i upload.keystore`
+8. Add all values to `.env.deploy`
 
 ---
 
 ## ERROR HANDLING
 
-| Error | Recovery |
-|-------|----------|
-| `.env.deploy` missing | Generate example, ask user to fill in |
-| `fastlane` not installed | Show install command, stop |
-| `maestro` not installed | Skip screenshots, continue with build |
-| Code signing fails | Check match setup, show `fastlane match appstore` |
-| Prebuild fails | Check app.config.js, run `npx expo prebuild --clean` |
-| Maestro flow fails | Read error, fix testID/selector, retry flow |
-| Build fails | Read Xcode/Gradle error, fix, rebuild |
-| Upload fails | Check credentials in .env.deploy |
-
-If maestro is not installed, screenshots are optional — proceed without them and note in DEPLOY.md that user should capture manually.
+| Error | Cause | Fix |
+|-------|-------|-----|
+| `.env.deploy` missing | Not configured | Generate example, show FIRST-TIME SETUP |
+| "No suitable application records" | Wrong bundle ID or team | Check APP_IDENTIFIER and ITC_TEAM_ID |
+| "Redundant Binary Upload" | Duplicate build number | Auto-handled by build number auto-increment |
+| "Missing attribute 'whatsNew'" | No release notes | Always generate release_notes.txt |
+| "Changes cannot be sent for review" (Android) | App in review state | Auto-handled by `changes_not_sent_for_review: true` |
+| "applicationNotFound" (Android) | No first manual upload | Tell user to upload first AAB via Play Console |
+| Certificate expired | Annual expiration | Tell user to renew in Developer Portal |
 
 ---
 
-## OUTPUT
+## WHAT CANNOT BE AUTOMATED
 
-After Phase 5, the build directory has:
-
-```
-apps/<app-slug>/
-├── fastlane/
-│   ├── Appfile
-│   ├── Fastfile
-│   └── metadata/
-│       ├── ios/en-US/          # name, subtitle, description, keywords
-│       └── android/en-US/      # title, short_description, full_description
-├── .maestro/
-│   └── screenshots.yaml        # Maestro flow for screenshots
-├── screenshots/
-│   └── raw/                    # Captured screenshots (PNG)
-├── build/                      # Built IPA (iOS)
-├── .env.deploy.example
-└── DEPLOY.md
-```
+- App record creation in App Store Connect (fastlane `produce` doesn't support API keys)
+- First AAB upload to Google Play (API limitation)
+- App Privacy Details / Nutrition Labels in ASC
+- Content rating questionnaire (IARC) in Play Console
+- Data safety form in Play Console
+- Certificate/profile renewal (annual, manual in Developer Portal)

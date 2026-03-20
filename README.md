@@ -18,6 +18,7 @@ Local AI-powered mobile app factory. Describe an idea → get a publishable Expo
 /build-app <idea>              Build a new app from an idea (interactive)
 /headless <path-to-prd>        Build from a pre-written PRD (autonomous)
 /improve-app <change request>  Modify an existing app
+/optimize-aso <app-slug>       Audit and optimize App Store metadata
 /release-app <app-slug>        Build + screenshots + deploy to stores
 ```
 

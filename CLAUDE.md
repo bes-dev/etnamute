@@ -106,7 +106,8 @@ Every app in `apps/<slug>/` MUST have:
 - `app/paywall.tsx` + `src/services/purchases.ts` — only if monetization enabled
 - `assets/icon.png` (1024x1024), `assets/splash.png`
 - `research/market_research.md`, `research/competitor_analysis.md`, `research/positioning.md`
-- `aso/app_title.txt`, `aso/subtitle.txt`, `aso/description.md`, `aso/keywords.txt`
+- `aso/ios/` — title.txt, subtitle.txt, keywords.txt, description.txt (conversion-only, not indexed)
+- `aso/android/` — title.txt, short_description.txt, full_description.txt (keyword-optimized)
 - `marketing/launch_thread.md`, `marketing/landing_copy.md`, `marketing/press_blurb.md`, `marketing/social_assets.md`
 - `README.md`, `RUNBOOK.md`, `TESTING.md`, `LAUNCH_CHECKLIST.md`, `privacy_policy.md`
 

@@ -14,7 +14,7 @@ Use `AskUserQuestion` for every question. Generate questions and options dynamic
 
 - Analyze user's initial idea first — skip questions already answered
 - 5-8 questions total
-- After the last question: "Вопросы закончились. Провожу исследование рынка и готовлю спецификацию."
+- After the last question, tell the user you're starting research (in their language)
 
 ### Step 2: Web Research (MANDATORY)
 
@@ -123,8 +123,9 @@ If paid:
 - **Interaction Patterns**: gestures, haptics, feedback
 
 ## 7. Technical Constraints
-- Platform: Expo SDK 53+, Expo Router v4
-- Storage: expo-sqlite + AsyncStorage
+- Platform: Expo (latest stable SDK), Expo Router
+- Storage: expo-sqlite + MMKV (or AsyncStorage)
+- Secrets: expo-secure-store for tokens
 - Monetization: RevenueCat (if enabled)
 - Offline: [what works offline]
 > Source: [USER/DEFAULT]

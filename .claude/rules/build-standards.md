@@ -114,7 +114,17 @@ If the PRD specifies monetization, all subscription handling must use RevenueCat
 
 ---
 
-## 6. PERFORMANCE & OFFLINE
+## 6. ERROR RESILIENCE
+
+- App-level Error Boundary wrapping the root — prevents blank screen on uncaught render errors
+- Screen-level Error Boundaries for per-screen recovery — user can navigate away from crashed screen
+- Fallback UI with retry action — not just an error message
+- Offline state detection and banner — not error screens for connectivity loss
+- Auth tokens in encrypted storage (expo-secure-store), not plain key-value storage
+
+---
+
+## 7. PERFORMANCE & OFFLINE
 
 - < 3 seconds to first interactive screen
 - 60fps UI interactions
@@ -125,7 +135,7 @@ If the PRD specifies monetization, all subscription handling must use RevenueCat
 
 ---
 
-## 7. CONDITIONAL RULES
+## 8. CONDITIONAL RULES
 
 ### Accounts (if implemented)
 

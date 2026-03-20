@@ -35,11 +35,16 @@ Write to `apps/<slug>/spec/plan.md`.
 - Every file that will be created, with purpose
 
 ### 5. Key Systems
-For each system, describe purpose, key files, dependencies:
-- Navigation & routing
-- Data persistence
-- Monetization (if enabled)
-- UI / design system
+For each system used by the app, describe purpose, key files, dependencies.
+Refer to `.claude/rules/app-patterns.md` for library choices. Include only systems the app needs:
+
+- **Navigation** — route structure, auth guards, deep linking (if applicable)
+- **Data persistence** — SQLite schema with migrations, key-value storage strategy
+- **Forms** — if the app has user input: form library, validation schemas, keyboard handling
+- **Images** — if the app displays images: caching, placeholders, optimization
+- **Error handling** — error boundary placement (root + per-screen), offline state handling
+- **Monetization** — if enabled: RevenueCat setup, entitlement mapping, paywall triggers
+- **Design system** — spacing scale, color tokens, typography, icon library
 
 ### 6. Monetization Flow
 If PRD §5 = monetization enabled:

@@ -58,7 +58,21 @@ Every section must have a source tag:
 
 ```
 
-**After showing the summary, ask for approval via `AskUserQuestion` (in the user's language):**
+**After showing the summary, ask the user to choose a name via `AskUserQuestion`:**
+
+Generate a name that is memorable, ≤30 chars, and relevant to the app's domain. Offer it as the first option, with "Other" for custom input.
+
+```
+question: "What should we call the app?"
+header: "Name"
+options:
+  - label: "<your suggested name>"
+    description: "Generated based on the app's domain and positioning"
+```
+
+The user can pick the suggestion or type their own via "Other". Update the PRD §1 App Name with the chosen name.
+
+**Then ask for PRD approval via `AskUserQuestion`:**
 
 ```
 question: "PRD is ready. Start building?"

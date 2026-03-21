@@ -1,0 +1,42 @@
+{
+  "generation_session": {
+    "timestamp": "2026-03-19T16:25:30.657Z",
+    "app_name": "ZenTime",
+    "output_directory": "apps/zentime/assets",
+    "method": "sips",
+    "assets_generated": 2
+  },
+  "assets": [
+    {
+      "asset_type": "icon",
+      "filename": "icon.png",
+      "dimensions": {
+        "width": 1024,
+        "height": 1024
+      },
+      "file_size": 303200,
+      "path": "apps/zentime/assets/icon.png",
+      "sha256": "610faca39c0858cff713dd6a10b132f3e039dbda8727f04c9838e3d6d1b20cb9",
+      "method": "sips",
+      "generated_at": "2026-03-19T16:25:30.446Z"
+    },
+    {
+      "asset_type": "splash",
+      "filename": "splash.png",
+      "dimensions": {
+        "width": 1284,
+        "height": 2778
+      },
+      "file_size": 689594,
+      "path": "apps/zentime/assets/splash.png",
+      "sha256": "b242d62bae034770e61717800828641b14df65e454c8662d7dc45ccf7f58056e",
+      "method": "sips",
+      "generated_at": "2026-03-19T16:25:30.657Z"
+    }
+  ],
+  "tools_used": {
+    "sharp_available": false,
+    "sips_available": true,
+    "platform": "darwin"
+  }
+}

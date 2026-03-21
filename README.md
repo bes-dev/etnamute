@@ -15,7 +15,7 @@ Local AI-powered mobile app factory. Describe an idea → get a publishable Expo
 ## Lifecycle
 
 ```
-/build-app → /improve-app (iterate) → /prepare-launch → /optimize-aso → /release-app
+/build-app → /improve-app (iterate) → /market-app → /release-app
 ```
 
 | Command | What it does |
@@ -23,11 +23,10 @@ Local AI-powered mobile app factory. Describe an idea → get a publishable Expo
 | `/build-app <idea>` | Build a new app from an idea (interactive) |
 | `/headless <path-to-prd>` | Build from a pre-written PRD (autonomous) |
 | `/improve-app <change>` | Modify an existing app |
-| `/prepare-launch <app>` | Generate research + marketing materials |
-| `/optimize-aso <app>` | Generate platform-specific ASO metadata |
+| `/market-app <app>` | Generate ASO, research, and marketing materials |
 | `/release-app <app>` | Build + screenshots + submit to stores |
 
-### Build from scratch
+### Build
 
 ```
 /build-app habit tracker for students
@@ -45,23 +44,15 @@ cd apps/<app-slug> && npm install && npx expo start
 /improve-app add dark mode to my water tracker
 ```
 
-Repeat until satisfied. ASO is not generated during development — saves tokens.
+Repeat until satisfied. Marketing materials are not generated during development — saves tokens.
 
-### Prepare launch materials
-
-```
-/prepare-launch water-tracker
-```
-
-Market research, competitor analysis, positioning, Twitter thread, landing copy, press blurb. Based on actual built app, not original PRD.
-
-### Optimize ASO
+### Market
 
 ```
-/optimize-aso water-tracker
+/market-app water-tracker
 ```
 
-Platform-specific: iOS (hidden keywords, conversion-focused description) and Android (keyword-optimized description) generated separately.
+Platform-specific ASO (iOS keywords + Android description optimization), market research, competitor analysis, launch thread, landing copy, press blurb.
 
 ### Release
 

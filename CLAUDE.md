@@ -49,8 +49,7 @@ PHASE 3: Finalization
 BUILD COMPLETE
   ↓ (user iterates with /improve-app until satisfied)
   ↓
-/optimize-aso → platform-specific App Store metadata              → pipeline/aso.md
-/prepare-launch → marketing materials + launch content            → pipeline/launch.md
+/market-app → ASO + research + marketing materials                → pipeline/market.md
   ↓
 /release-app → build + screenshots + submit to stores             → pipeline/release.md
 ```
@@ -108,9 +107,7 @@ Every app in `apps/<slug>/` MUST have:
 - `app/` with `_layout.tsx`, `index.tsx`, `home.tsx`, `settings.tsx`
 - `app/paywall.tsx` + `src/services/purchases.ts` — only if monetization enabled
 - `assets/icon.png` (1024x1024), `assets/splash.png`
-- `research/market_research.md`, `research/competitor_analysis.md`, `research/positioning.md`
-- `aso/` — generated via `/optimize-aso` after code is finalized
-- `research/`, `marketing/` — generated via `/prepare-launch` after code is finalized
+- `aso/`, `research/`, `marketing/` — generated via `/market-app` after code is finalized
 - `README.md`, `RUNBOOK.md`, `TESTING.md`, `LAUNCH_CHECKLIST.md`, `privacy_policy.md`
 
 ---

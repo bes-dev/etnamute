@@ -9,10 +9,9 @@ Single command: build, sign, upload, submit for review. Both platforms.
 ## PRE-FLIGHT CHECKS
 
 1. **`.env.deploy` exists** — `test -f apps/<slug>/.env.deploy`. Do NOT read contents.
-2. **ASO artifacts exist** — check `apps/<slug>/aso/ios/` and `apps/<slug>/aso/android/`. If not → tell user to run `/optimize-aso` first and stop.
-3. **Marketing artifacts exist** — check `apps/<slug>/marketing/` and `apps/<slug>/research/`. If not → tell user to run `/prepare-launch` first and stop.
-4. **Tools installed** — check with `which`: `fastlane`, `xcrun` (iOS), `java` (Android)
-5. **App records exist** — ask user: "Have you created the app in App Store Connect and Google Play Console?" If no → show FIRST-TIME SETUP and stop.
+2. **Market materials exist** — check `apps/<slug>/aso/`, `apps/<slug>/marketing/`, `apps/<slug>/research/` all exist. If not → tell user to run `/market-app` first and stop.
+3. **Tools installed** — check with `which`: `fastlane`, `xcrun` (iOS), `java` (Android)
+4. **App records exist** — ask user: "Have you created the app in App Store Connect and Google Play Console?" If no → show FIRST-TIME SETUP and stop.
 
 If `.env.deploy` missing → generate `.env.deploy.example` and stop.
 

@@ -55,7 +55,7 @@ Before writing code:
    - `marketing/` — if core value prop changed
    - `README.md` — if features or setup changed
    - `privacy_policy.md` — if data collection changed
-   - Do NOT update `aso/` — ASO is managed separately via `/optimize-aso` after code is finalized
+   - Do NOT update `aso/` — ASO is managed separately via `/market-app` after code is finalized
 8. **Version bump** — patch (bugfix), minor (feature/UX), major (redesign/breaking)
 
 ### Step 5: Apply changes
@@ -87,7 +87,7 @@ Execute in this order:
 - Delete screen file(s) and navigation entry
 - Delete related components, hooks, services, types
 - Clean all imports referencing deleted code
-- Note: ASO will need updating via `/optimize-aso` after code changes are done
+- Note: ASO will need updating via `/market-app` after code changes are done
 - Remove unused dependencies from package.json
 - If feature used fonts: search for font family name strings in ALL style objects, remove from config plugin
 - If feature had Zustand persisted state: add migration to remove fields (don't just delete from store definition — orphaned data persists)

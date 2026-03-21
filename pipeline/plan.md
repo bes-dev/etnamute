@@ -87,7 +87,7 @@ Break into 5 milestones with checklists:
 - [ ] App icon + splash screen
 - [ ] README, RUNBOOK, TESTING, LAUNCH_CHECKLIST, privacy_policy
 - [ ] Verify: all deliverables present
-- [ ] Note: research/, marketing/, aso/ are NOT generated during build — run `/prepare-launch` and `/optimize-aso` after code is finalized
+- [ ] Note: research/, marketing/, aso/ are NOT generated during build — run `/market-app` after code is finalized
 
 ### 8. Verification Strategy
 For each milestone: what commands to run, what to check manually.

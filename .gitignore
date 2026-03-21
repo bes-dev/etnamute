@@ -47,3 +47,5 @@ fastlane/test_output/
 
 # Generated apps
 apps/
+assets/
+-- --assets

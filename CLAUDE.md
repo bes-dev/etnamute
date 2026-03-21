@@ -49,11 +49,10 @@ PHASE 3: Finalization
 BUILD COMPLETE
   ↓ (user iterates with /improve-app until satisfied)
   ↓
-/optimize-aso                                                     → pipeline/aso.md
-  Platform-specific ASO artifacts (iOS + Android separately)
+/optimize-aso → platform-specific App Store metadata              → pipeline/aso.md
+/prepare-launch → marketing materials + launch content            → pipeline/launch.md
   ↓
-/release-app (on user request)                                    → pipeline/release.md
-  Fastlane config + Maestro screenshots + local build + submit
+/release-app → build + screenshots + submit to stores             → pipeline/release.md
 ```
 
 **Improve Mode**: user requests changes to an existing app → `pipeline/improve.md`
@@ -110,8 +109,8 @@ Every app in `apps/<slug>/` MUST have:
 - `app/paywall.tsx` + `src/services/purchases.ts` — only if monetization enabled
 - `assets/icon.png` (1024x1024), `assets/splash.png`
 - `research/market_research.md`, `research/competitor_analysis.md`, `research/positioning.md`
-- `aso/` — generated separately via `/optimize-aso` after code is finalized
-- `marketing/launch_thread.md`, `marketing/landing_copy.md`, `marketing/press_blurb.md`, `marketing/social_assets.md`
+- `aso/` — generated via `/optimize-aso` after code is finalized
+- `research/`, `marketing/` — generated via `/prepare-launch` after code is finalized
 - `README.md`, `RUNBOOK.md`, `TESTING.md`, `LAUNCH_CHECKLIST.md`, `privacy_policy.md`
 
 ---
@@ -172,7 +171,7 @@ Improve ──[changes + verify]──▶ Done ──[more changes]──▶ Imp
 | M2: Screens | navigation, core UI screens | ≥97% |
 | M3: Features | core functionality, data persistence | ≥97% |
 | M4: Monetization | RevenueCat, paywall, gating — **skip if free** | ≥97% |
-| M5: Polish + Launch | onboarding, assets, research, marketing (NOT ASO — done separately via /optimize-aso) | ≥97% |
+| M5: Polish | onboarding, assets, README, RUNBOOK, TESTING, LAUNCH_CHECKLIST, privacy_policy | ≥97% |
 
 After each milestone: implement → verify → Ralph QA → proceed only after ≥97%.
 

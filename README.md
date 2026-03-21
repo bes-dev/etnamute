@@ -15,7 +15,7 @@ Local AI-powered mobile app factory. Describe an idea → get a publishable Expo
 ## Lifecycle
 
 ```
-/build-app ──→ /improve-app (iterate) ──→ /optimize-aso ──→ /release-app
+/build-app → /improve-app (iterate) → /prepare-launch → /optimize-aso → /release-app
 ```
 
 | Command | What it does |
@@ -23,8 +23,9 @@ Local AI-powered mobile app factory. Describe an idea → get a publishable Expo
 | `/build-app <idea>` | Build a new app from an idea (interactive) |
 | `/headless <path-to-prd>` | Build from a pre-written PRD (autonomous) |
 | `/improve-app <change>` | Modify an existing app |
-| `/optimize-aso <app>` | Generate platform-specific ASO (after code is finalized) |
-| `/release-app <app>` | Build + screenshots + submit to App Store and Google Play |
+| `/prepare-launch <app>` | Generate research + marketing materials |
+| `/optimize-aso <app>` | Generate platform-specific ASO metadata |
+| `/release-app <app>` | Build + screenshots + submit to stores |
 
 ### Build from scratch
 
@@ -46,13 +47,21 @@ cd apps/<app-slug> && npm install && npx expo start
 
 Repeat until satisfied. ASO is not generated during development — saves tokens.
 
+### Prepare launch materials
+
+```
+/prepare-launch water-tracker
+```
+
+Market research, competitor analysis, positioning, Twitter thread, landing copy, press blurb. Based on actual built app, not original PRD.
+
 ### Optimize ASO
 
 ```
 /optimize-aso water-tracker
 ```
 
-Platform-specific metadata: iOS (hidden keywords, conversion-focused description) and Android (keyword-optimized description, short description) generated separately.
+Platform-specific: iOS (hidden keywords, conversion-focused description) and Android (keyword-optimized description) generated separately.
 
 ### Release
 

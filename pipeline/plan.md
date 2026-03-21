@@ -82,13 +82,12 @@ Break into 5 milestones with checklists:
 - [ ] Premium gating
 - [ ] Verify: subscription flow works
 
-**M5: Polish + Launch Materials**
+**M5: Polish**
 - [ ] Onboarding flow
 - [ ] App icon + splash screen
-- [ ] research/, marketing/ artifacts
 - [ ] README, RUNBOOK, TESTING, LAUNCH_CHECKLIST, privacy_policy
 - [ ] Verify: all deliverables present
-- [ ] Note: ASO artifacts are NOT generated here — run `/optimize-aso` after code is finalized
+- [ ] Note: research/, marketing/, aso/ are NOT generated during build — run `/prepare-launch` and `/optimize-aso` after code is finalized
 
 ### 8. Verification Strategy
 For each milestone: what commands to run, what to check manually.

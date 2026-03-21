@@ -52,10 +52,10 @@ Before writing code:
 6. **Refactoring needed** — if a component you're modifying exceeds 250 lines or has 3+ useState, split it as part of this change
 7. **Artifacts to update**:
    - `spec/prd.md`
-   - `aso/description.md`, `aso/keywords.txt` — if user-facing functionality changed
    - `marketing/` — if core value prop changed
    - `README.md` — if features or setup changed
    - `privacy_policy.md` — if data collection changed
+   - Do NOT update `aso/` — ASO is managed separately via `/optimize-aso` after code is finalized
 8. **Version bump** — patch (bugfix), minor (feature/UX), major (redesign/breaking)
 
 ### Step 5: Apply changes
@@ -87,7 +87,7 @@ Execute in this order:
 - Delete screen file(s) and navigation entry
 - Delete related components, hooks, services, types
 - Clean all imports referencing deleted code
-- Remove from ASO description/keywords
+- Note: ASO will need updating via `/optimize-aso` after code changes are done
 - Remove unused dependencies from package.json
 - If feature used fonts: search for font family name strings in ALL style objects, remove from config plugin
 - If feature had Zustand persisted state: add migration to remove fields (don't just delete from store definition — orphaned data persists)
@@ -126,7 +126,6 @@ Execute in this order:
 
 **7. Update artifacts:**
 - `app.config.js` — bump version
-- `aso/` — sync description/keywords with actual features
 - `marketing/` — update if value prop changed
 - `README.md` — update feature list
 - `privacy_policy.md` — update if data handling changed
@@ -137,7 +136,7 @@ Execute in this order:
 2. `npx expo install --check` — all dependencies compatible with current SDK
 3. PRD matches code — every feature in PRD exists, nothing in code that's not in PRD
 4. No dead code — no unused imports, files, dependencies, assets
-5. Artifacts in sync — ASO description matches actual features
+5. Artifacts in sync — marketing and docs match actual features (ASO updated separately)
 6. If routes changed — old routes have redirects or stubs
 7. If data model changed — migrations added for SQLite and/or Zustand persisted stores
 8. If UX changed — styles consistent across all affected screens, accessibility intact

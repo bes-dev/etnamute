@@ -47,8 +47,12 @@ PHASE 3: Finalization
   Final Ralph QA → FINAL_VERDICT.md                              → apps/<slug>/ralph/
   ↓
 BUILD COMPLETE
-  ↓ (on user request)
-PHASE 4: Release (OPTIONAL)                                      → pipeline/release.md
+  ↓ (user iterates with /improve-app until satisfied)
+  ↓
+/optimize-aso                                                     → pipeline/aso.md
+  Platform-specific ASO artifacts (iOS + Android separately)
+  ↓
+/release-app (on user request)                                    → pipeline/release.md
   Fastlane config + Maestro screenshots + local build + submit
 ```
 
@@ -106,8 +110,7 @@ Every app in `apps/<slug>/` MUST have:
 - `app/paywall.tsx` + `src/services/purchases.ts` — only if monetization enabled
 - `assets/icon.png` (1024x1024), `assets/splash.png`
 - `research/market_research.md`, `research/competitor_analysis.md`, `research/positioning.md`
-- `aso/ios/` — title.txt, subtitle.txt, keywords.txt, description.txt (conversion-only, not indexed)
-- `aso/android/` — title.txt, short_description.txt, full_description.txt (keyword-optimized)
+- `aso/` — generated separately via `/optimize-aso` after code is finalized
 - `marketing/launch_thread.md`, `marketing/landing_copy.md`, `marketing/press_blurb.md`, `marketing/social_assets.md`
 - `README.md`, `RUNBOOK.md`, `TESTING.md`, `LAUNCH_CHECKLIST.md`, `privacy_policy.md`
 
@@ -169,7 +172,7 @@ Improve ──[changes + verify]──▶ Done ──[more changes]──▶ Imp
 | M2: Screens | navigation, core UI screens | ≥97% |
 | M3: Features | core functionality, data persistence | ≥97% |
 | M4: Monetization | RevenueCat, paywall, gating — **skip if free** | ≥97% |
-| M5: Polish + Launch | onboarding, assets, research, ASO, marketing | ≥97% |
+| M5: Polish + Launch | onboarding, assets, research, marketing (NOT ASO — done separately via /optimize-aso) | ≥97% |
 
 After each milestone: implement → verify → Ralph QA → proceed only after ≥97%.
 

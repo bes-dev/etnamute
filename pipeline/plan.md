@@ -85,9 +85,10 @@ Break into 5 milestones with checklists:
 **M5: Polish + Launch Materials**
 - [ ] Onboarding flow
 - [ ] App icon + splash screen
-- [ ] research/, aso/, marketing/ artifacts
+- [ ] research/, marketing/ artifacts
 - [ ] README, RUNBOOK, TESTING, LAUNCH_CHECKLIST, privacy_policy
 - [ ] Verify: all deliverables present
+- [ ] Note: ASO artifacts are NOT generated here — run `/optimize-aso` after code is finalized
 
 ### 8. Verification Strategy
 For each milestone: what commands to run, what to check manually.

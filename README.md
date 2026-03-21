@@ -12,15 +12,19 @@ Local AI-powered mobile app factory. Describe an idea → get a publishable Expo
 
 ---
 
-## Commands
+## Lifecycle
 
 ```
-/build-app <idea>              Build a new app from an idea (interactive)
-/headless <path-to-prd>        Build from a pre-written PRD (autonomous)
-/improve-app <change request>  Modify an existing app
-/optimize-aso <app-slug>       Audit and optimize App Store metadata
-/release-app <app-slug>        Build + screenshots + deploy to stores
+/build-app ──→ /improve-app (iterate) ──→ /optimize-aso ──→ /release-app
 ```
+
+| Command | What it does |
+|---------|-------------|
+| `/build-app <idea>` | Build a new app from an idea (interactive) |
+| `/headless <path-to-prd>` | Build from a pre-written PRD (autonomous) |
+| `/improve-app <change>` | Modify an existing app |
+| `/optimize-aso <app>` | Generate platform-specific ASO (after code is finalized) |
+| `/release-app <app>` | Build + screenshots + submit to App Store and Google Play |
 
 ### Build from scratch
 
@@ -28,43 +32,43 @@ Local AI-powered mobile app factory. Describe an idea → get a publishable Expo
 /build-app habit tracker for students
 ```
 
-Interactive discovery interview → market research → PRD approval → autonomous build with QA.
-
-Output: `apps/<app-slug>/`
+Interview → market research → PRD approval → autonomous build with QA.
 
 ```bash
-cd apps/<app-slug>
-npm install
-npx expo start
+cd apps/<app-slug> && npm install && npx expo start
 ```
 
-### Improve existing app
+### Iterate
 
 ```
 /improve-app add dark mode to my water tracker
 ```
 
-Reads existing PRD and code, clarifies if needed, applies targeted changes, verifies.
+Repeat until satisfied. ASO is not generated during development — saves tokens.
 
-### Build from PRD (headless)
+### Optimize ASO
 
 ```
-/headless path/to/my-prd.md
+/optimize-aso water-tracker
 ```
 
-Skips the interview — builds directly from a pre-written PRD. No interactive steps. Designed for programmatic use by other AI agents.
+Platform-specific metadata: iOS (hidden keywords, conversion-focused description) and Android (keyword-optimized description, short description) generated separately.
 
-PRD must conform to `pipeline/prd-schema.md`.
-
-### Release to App Store
+### Release
 
 ```
 /release-app water-tracker
 ```
 
-Generates fastlane config, captures screenshots via Maestro, builds locally. Asks confirmation before submitting.
+Prebuild → Maestro screenshots → fastlane build → sign → submit for review. Fully automated after one-time setup.
 
-Requires: Xcode, Android SDK, fastlane, maestro, Apple/Google developer accounts.
+### Headless (for other AI agents)
+
+```
+/headless path/to/my-prd.md
+```
+
+No interview. PRD in, app out.
 
 ---
 
@@ -80,7 +84,5 @@ Requires: Xcode, Android SDK, fastlane, maestro, Apple/Google developer accounts
 ├── .mcp.json                 # Docs MCP (Expo + RevenueCat)
 └── apps/                     # Generated apps
 ```
-
-
 
 Generates **Expo React Native** apps with TypeScript, NativeWind, Zustand, expo-sqlite, and optional RevenueCat monetization. SDK versions are resolved at build time from the latest stable Expo release.

@@ -11,8 +11,9 @@ Prevent the "vibe coded" look — inconsistent spacing, mismatched fonts, random
 ## Stitch / DESIGN.md
 
 - If `apps/<slug>/spec/DESIGN.md` exists — it is the **source of truth** for all visual decisions
-- If Stitch MCP is available — use `get_screen_image` to see the intended design before implementing screens
-- All colors, spacing, typography, and component styles from DESIGN.md override the generic rules below
+- Reproduce the design as closely as possible: exact colors, spacing, typography, layout, component styles
+- If Stitch MCP is available — use `get_screen_image` to see the intended design and match it precisely
+- All visual decisions from DESIGN.md override the generic rules below
 - If no DESIGN.md exists — follow the generic rules below
 
 ## Spacing

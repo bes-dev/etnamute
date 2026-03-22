@@ -26,6 +26,7 @@ Optional: set `STITCH_API_KEY` env var for [Google Stitch](https://stitch.withgo
 | `/headless <path-to-prd>` | Build from a pre-written PRD (autonomous) |
 | `/improve-app <change>` | Modify an existing app |
 | `/market-app <app>` | Generate ASO, research, and marketing materials |
+| `/build-native <app>` | Build IPA/AAB/APK locally without publishing |
 | `/release-app <app>` | Build + screenshots + submit to stores |
 
 ### Build

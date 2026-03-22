@@ -8,6 +8,11 @@
         "https://docs.expo.dev/llms.txt",
         "https://www.revenuecat.com/docs/llms.txt"
       ]
+    },
+    "stitch": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["@_davideast/stitch-mcp", "proxy"]
     }
   }
 }

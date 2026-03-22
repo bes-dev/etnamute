@@ -72,6 +72,22 @@ options:
 
 The user can pick the suggestion or type their own via "Other". Update the PRD §1 App Name with the chosen name.
 
+**If Stitch MCP is available, offer to generate UI design:**
+
+```
+question: "Generate UI design with Google Stitch before building?"
+header: "Design"
+options:
+  - label: "Yes, generate design"
+    description: "Stitch will create screen designs based on PRD. Saves as DESIGN.md — code will follow the design."
+  - label: "No, skip design"
+    description: "Claude will make UI decisions during build"
+```
+
+If "Yes": use Stitch MCP to generate screens from PRD §6 (Key Screens). Save screenshots to review with user. Export design tokens to `apps/<slug>/spec/DESIGN.md`. This becomes the visual source of truth for code generation.
+
+If Stitch MCP is not available — skip this step silently.
+
 **Then ask for PRD approval via `AskUserQuestion`:**
 
 ```

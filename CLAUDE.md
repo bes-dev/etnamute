@@ -89,10 +89,11 @@ etnamute/
 ├── .mcp.json                        # mcpdoc (Expo + RevenueCat docs)
 └── apps/                            # One directory per app
     └── <app-slug>/
-        ├── spec/                    # PRD, research, plan
+        ├── spec/                    # PRD, research, plan, design
         │   ├── prd.md
         │   ├── research.md
-        │   └── plan.md
+        │   ├── plan.md
+        │   └── DESIGN.md           # From Stitch (optional)
         ├── ralph/FINAL_VERDICT.md
         ├── package.json
         ├── app/, src/, assets/

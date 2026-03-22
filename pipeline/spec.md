@@ -188,7 +188,7 @@ If paid:
 - [ ] Settings screen
 - [ ] App icon + splash screen
 - [ ] Privacy policy
-- [ ] research/, aso/, marketing/ artifacts
+- [ ] Note: research/, aso/, marketing/ are generated later via `/market-app`
 
 ## 12. Success Criteria
 1. Core loop works end-to-end

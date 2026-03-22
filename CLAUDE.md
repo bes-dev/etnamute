@@ -296,7 +296,7 @@ VERIFIED:
 - [ ] npm install succeeds
 - [ ] npx expo start works
 - [ ] RevenueCat integrated (if monetization enabled)
-- [ ] All research/ASO/marketing artifacts present
+- [ ] All code deliverables present (research/ASO/marketing generated separately via /market-app)
 ```
 
 Then output:

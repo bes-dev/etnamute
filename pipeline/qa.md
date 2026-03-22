@@ -94,25 +94,11 @@ The checklist has two parts: **static checks** (same for every app) and **dynami
 
 #### A3. Research Artifacts (BLOCKING)
 
-- [ ] `research/market_research.md` exists and is substantive
-- [ ] `research/competitor_analysis.md` exists and is substantive
-- [ ] `research/positioning.md` exists and is substantive
-- [ ] Research is specific to this app's domain (not generic/templated)
+- [ ] Note: research/ artifacts are generated later via `/market-app`, not checked during build QA
 
-#### A4. ASO Artifacts (BLOCKING)
+#### A4. Note
 
-- [ ] `aso/app_title.txt` exists (max 30 chars)
-- [ ] `aso/subtitle.txt` exists (max 30 chars)
-- [ ] `aso/description.md` exists and is compelling
-- [ ] `aso/keywords.txt` exists (max 100 chars total)
-
-#### A5. Marketing Artifacts (BLOCKING)
-
-- [ ] `marketing/launch_thread.md` exists (10+ tweet thread)
-- [ ] `marketing/landing_copy.md` exists (headline + body copy)
-- [ ] `marketing/press_kit.md` exists (one-pager for press)
-- [ ] `marketing/social_assets.md` exists (social media descriptions)
-- [ ] Marketing content is specific to this app (not templated)
+ASO, research, and marketing artifacts are NOT checked during build QA — they are generated later via `/market-app`.
 
 #### A6. React Native Skills Compliance (5% weight)
 
@@ -523,13 +509,9 @@ The build directory must exist at `apps/<app-slug>/` with:
 - app.config.js or app.json
 - src/ directory with screens
 - assets/ directory
-- research/ directory with all 3 required files
-- aso/ directory with all 4 required files
-- marketing/ directory with all 4 required files
-
 If the build directory is incomplete, Ralph FAILS immediately with "Incomplete Build" verdict.
 
-**Research, ASO, and Marketing are BLOCKING requirements.** A build without complete research/, aso/, and marketing/ directories cannot pass, regardless of code quality.
+Note: research/, aso/, and marketing/ directories are NOT required during build QA — they are generated separately via `/market-app`.
 
 ---
 

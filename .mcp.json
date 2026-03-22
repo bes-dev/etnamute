@@ -12,7 +12,10 @@
     "stitch": {
       "type": "stdio",
       "command": "npx",
-      "args": ["@_davideast/stitch-mcp", "proxy"]
+      "args": ["@_davideast/stitch-mcp", "proxy"],
+      "env": {
+        "STITCH_API_KEY": "${STITCH_API_KEY}"
+      }
     }
   }
 }

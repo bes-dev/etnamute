@@ -65,14 +65,11 @@ BUILD COMPLETE
 etnamute/
 ├── CLAUDE.md
 ├── .claude/
-│   ├── skills/                      # Auto-discovered code quality rules
-│   │   ├── react-native/
-│   │   ├── mobile-ui/
-│   │   ├── mobile-interface/
-│   │   └── expo/
-│   └── rules/                       # Auto-discovered build standards
-│       ├── build-standards.md
-│       └── research-policy.md
+│   ├── skills/
+│   │   ├── commands/                # Slash commands (/build-app, /improve-app, etc.)
+│   │   └── knowledge/               # Code quality skills (react-native, expo, etc.)
+│   ├── rules/                       # Auto-discovered build standards
+│   └── hooks/                       # Post-edit checks
 ├── pipeline/                        # Phase instructions
 │   ├── discovery.md                 # Adaptive interview
 │   ├── spec.md                      # PRD generation

@@ -10,7 +10,18 @@ Local AI-powered mobile app factory. Describe an idea → get a publishable Expo
 ./setup.sh
 ```
 
-Optional: set `STITCH_API_KEY` env var for [Google Stitch](https://stitch.withgoogle.com) UI design generation.
+### Optional tools
+
+**Google Stitch** (AI UI design):
+```bash
+export STITCH_API_KEY=<key from stitch.withgoogle.com/settings>
+```
+
+**Maestro** (smoke testing, visual verification, App Store screenshots):
+```bash
+curl -fsSL "https://get.maestro.mobile.dev" | bash
+```
+Requires a dev build (`npx expo run:ios` or `npx expo run:android`), not Expo Go.
 
 ---
 
@@ -36,6 +47,8 @@ Optional: set `STITCH_API_KEY` env var for [Google Stitch](https://stitch.withgo
 ```
 
 Interview → PRD approval → optional Stitch UI design → autonomous build with QA.
+
+If Maestro is installed: smoke tests run after each milestone, visual verification against DESIGN.md.
 
 Code only — no marketing or ASO generated at this stage.
 
@@ -79,8 +92,12 @@ No interview. PRD in, app out.
 
 ## Integrations
 
-- **[mcpdoc](https://github.com/langchain-ai/mcpdoc)** — live Expo + RevenueCat documentation on demand
-- **[Google Stitch](https://stitch.withgoogle.com)** — AI UI design generation, strict visual reproduction in code
+| Tool | Purpose | Setup |
+|------|---------|-------|
+| [mcpdoc](https://github.com/langchain-ai/mcpdoc) | Live Expo + RevenueCat docs | `pip install mcpdoc` (via setup.sh) |
+| [Google Stitch](https://stitch.withgoogle.com) | AI UI design generation | `export STITCH_API_KEY=<key>` |
+| [Maestro](https://maestro.mobile.dev) | Smoke tests, visual verification, screenshots | `curl -fsSL "https://get.maestro.mobile.dev" \| bash` |
+| [fastlane](https://fastlane.tools) | Build + sign + submit to stores | `brew install fastlane` |
 
 ---
 

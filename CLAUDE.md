@@ -65,9 +65,7 @@ BUILD COMPLETE
 etnamute/
 ├── CLAUDE.md
 ├── .claude/
-│   ├── skills/
-│   │   ├── commands/                # Slash commands (/build-app, /improve-app, etc.)
-│   │   └── knowledge/               # Code quality skills (react-native, expo, etc.)
+│   ├── skills/                      # Slash commands + code quality skills
 │   ├── rules/                       # Auto-discovered build standards
 │   └── hooks/                       # Post-edit checks
 ├── pipeline/                        # Phase instructions

@@ -3,7 +3,7 @@
 # Usage: scripts/verify.sh apps/<slug>
 # Exit 0 = all pass, exit 1 = failure
 
-set -euo pipefail
+set -uo pipefail
 
 APP_DIR="${1:?Usage: scripts/verify.sh apps/<slug>}"
 
@@ -19,6 +19,7 @@ GREEN='\033[0;32m'
 NC='\033[0m'
 
 FAILED=0
+PASSED_TESTS=""
 
 echo ""
 echo "=== Etnamute Verify: $(basename $APP_DIR) ==="
@@ -65,8 +66,8 @@ if echo "$TEST_LOG" | grep -q "Tests:.*failed"; then
   echo "$TEST_LOG" | grep -E "FAIL|✕|Tests:" | head -20
   FAILED=1
 else
-  PASSED=$(echo "$TEST_LOG" | grep -oE "[0-9]+ passed" | head -1)
-  echo -e "${GREEN}PASS${NC} ($PASSED)"
+  PASSED_TESTS=$(echo "$TEST_LOG" | grep -oE "[0-9]+ passed" | head -1)
+  echo -e "${GREEN}PASS${NC} ($PASSED_TESTS)"
 fi
 
 if [ $FAILED -eq 1 ]; then
@@ -84,17 +85,19 @@ RUNTIME_LOG="/tmp/etnamute-runtime-$(basename $APP_DIR).log"
 rm -f "$RUNTIME_LOG"
 
 echo "Starting app on simulator..."
-npx expo start --ios 2>&1 | tee "$RUNTIME_LOG" &
+npx expo start --ios > "$RUNTIME_LOG" 2>&1 &
 EXPO_PID=$!
 
 echo "Waiting 45 seconds for runtime errors..."
 sleep 45
 
 echo -n "Checking runtime log... "
-ERRORS=$(grep -iE "ERROR|TypeError|ReferenceError|is not a function|is undefined|Exception in HostFunction|Invariant Violation" "$RUNTIME_LOG" 2>/dev/null || true)
+ERRORS=$(grep -iE " ERROR |TypeError|ReferenceError|is not a function|is undefined|Exception in HostFunction|Invariant Violation" "$RUNTIME_LOG" 2>/dev/null || true)
 
-kill $EXPO_PID 2>/dev/null
-wait $EXPO_PID 2>/dev/null
+# Kill expo and all child processes
+kill -- -$EXPO_PID 2>/dev/null || kill $EXPO_PID 2>/dev/null || true
+# Also kill any Metro process on port 8081
+lsof -ti:8081 2>/dev/null | xargs kill -9 2>/dev/null || true
 
 if [ -n "$ERRORS" ]; then
   echo -e "${RED}FAIL${NC}"
@@ -115,7 +118,7 @@ if [ $FAILED -eq 0 ]; then
   echo -e "${GREEN}ALL LEVELS PASSED${NC}"
   echo ""
   echo "Level 1 (Build):   PASS"
-  echo "Level 2 (Tests):   PASS ($PASSED)"
+  echo "Level 2 (Tests):   PASS ($PASSED_TESTS)"
   echo "Level 3 (Runtime): PASS"
   exit 0
 else

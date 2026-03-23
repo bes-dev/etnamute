@@ -92,7 +92,7 @@ echo "Waiting 45 seconds for runtime errors..."
 sleep 45
 
 echo -n "Checking runtime log... "
-ERRORS=$(grep -iE " ERROR |TypeError|ReferenceError|is not a function|is undefined|Exception in HostFunction|Invariant Violation" "$RUNTIME_LOG" 2>/dev/null || true)
+ERRORS=$(grep -iE -A 10 " ERROR |TypeError|ReferenceError|is not a function|is undefined|Exception in HostFunction|Invariant Violation" "$RUNTIME_LOG" 2>/dev/null || true)
 
 # Kill expo and all child processes
 kill -- -$EXPO_PID 2>/dev/null || kill $EXPO_PID 2>/dev/null || true

@@ -6,7 +6,8 @@
       "args": [
         "--urls",
         "https://docs.expo.dev/llms.txt",
-        "https://www.revenuecat.com/docs/llms.txt"
+        "https://www.revenuecat.com/docs/llms.txt",
+        "https://docs.maestro.dev/llms.txt"
       ]
     },
     "stitch": {

@@ -10,21 +10,13 @@ Improve an existing app. Read `pipeline/improve.md` and follow ALL steps:
 2. Clarify — ask only if ambiguous
 3. Plan — PRD impact, files, dead code, tests to write, version bump
 4. Apply — update PRD first, then code, write/update tests, clean dead code
-5. Verify — ALL levels mandatory:
-
-   **Level 1:** `npx tsc --noEmit && npx expo export`
-   **Level 2:** `npx jest --passWithNoTests`
-   **Level 3 (CRITICAL):**
+5. Verify:
    ```bash
-   npx expo start --ios 2>&1 | tee /tmp/expo-runtime.log &
+   ../../scripts/verify.sh .
    ```
-   Wait 45-60 seconds, then:
-   ```bash
-   cat /tmp/expo-runtime.log | grep -iE "ERROR|TypeError|ReferenceError|is not a function|is undefined|Exception in HostFunction"
-   ```
-   Kill: `kill %1 2>/dev/null`
-   **If ANY matches → app is BROKEN. Fix and re-run. "Bundled successfully" ≠ app works.**
+   If fails → fix and re-run. Max 3 attempts.
+6. Report — versioned summary with verify.sh output, wait for feedback
 
-6. Report — versioned summary with QA results, wait for feedback
+**verify.sh must exit 0 before reporting success.**
 
 Change request: $ARGUMENTS

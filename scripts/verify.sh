@@ -61,9 +61,10 @@ echo "--- Level 2: Tests ---"
 
 echo -n "Jest... "
 TEST_LOG=$(npx jest --passWithNoTests --verbose 2>&1)
-if echo "$TEST_LOG" | grep -q "Tests:.*failed"; then
+TEST_EXIT=$?
+if [ $TEST_EXIT -ne 0 ] || echo "$TEST_LOG" | grep -qE "Tests:.*failed|Test Suites:.*failed|FAIL"; then
   echo -e "${RED}FAIL${NC}"
-  echo "$TEST_LOG" | grep -E "FAIL|✕|Tests:" | head -20
+  echo "$TEST_LOG" | grep -E "FAIL|✕|Tests:|Test Suites:|Cannot find module|failed to run" | head -20
   FAILED=1
 else
   PASSED_TESTS=$(echo "$TEST_LOG" | grep -oE "[0-9]+ passed" | head -1)

@@ -1,35 +1,41 @@
 {
   "permissions": {
     "allow": [
-      "Bash(npm *)",
-      "Bash(npx *)",
-      "Bash(node *)",
-      "Bash(ls *)",
-      "Bash(wc *)",
-      "Bash(cat *)",
-      "Bash(mkdir apps/*)",
-      "Bash(cp apps/*)",
-      "Bash(mv apps/*)",
-      "Bash(rm apps/*)",
-      "Bash(chmod *)",
-      "Bash(find *)",
-      "Bash(head *)",
-      "Bash(tail *)",
-      "Bash(sort *)",
-      "Bash(grep *)",
-      "Bash(fastlane *)",
-      "Bash(maestro *)",
-      "Bash(cd /tmp *)",
-      "Read(/tmp/**)",
-      "Read(/private/tmp/**)",
+      "Bash",
+      "Read",
+      "Edit",
+      "Write",
+      "WebFetch",
       "WebSearch",
-      "WebFetch(*)",
-      "mcp__mcpdoc__*"
+      "Glob",
+      "Grep",
+      "Agent",
+      "mcp__mcpdoc__*",
+      "mcp__stitch__*"
+    ],
+    "deny": [
+      "Bash(rm -rf /)",
+      "Bash(rm -rf /*)",
+      "Bash(rm -rf ~)",
+      "Bash(rm -rf ~/*)",
+      "Bash(sudo *)",
+      "Bash(shutdown *)",
+      "Bash(reboot *)",
+      "Bash(halt *)",
+      "Bash(dd *)",
+      "Bash(mkfs*)",
+      "Bash(fdisk *)",
+      "Edit(//etc/**)",
+      "Edit(//sys/**)",
+      "Edit(//proc/**)",
+      "Edit(~/.ssh/**)",
+      "Edit(~/.aws/**)"
     ]
   },
   "enableAllProjectMcpServers": true,
   "enabledMcpjsonServers": [
-    "mcpdoc"
+    "mcpdoc",
+    "stitch"
   ],
   "hooks": {
     "PostToolUse": [

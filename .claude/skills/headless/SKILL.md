@@ -4,20 +4,11 @@ description: Build an app from a pre-written PRD file without interactive discov
 disable-model-invocation: true
 ---
 
-Build an app from a ready PRD. No interview, no interaction.
+Build an app from a ready PRD. No interview.
 
 1. Read `pipeline/headless.md` — validate PRD against `pipeline/prd-schema.md`
 2. If invalid — list errors and stop
 3. Copy PRD to `apps/<slug>/spec/prd.md`
-4. Read `pipeline/plan.md` — generate implementation plan with jest setup in M1
-5. Build all milestones. After EACH milestone, write tests then run:
-   ```bash
-   ../../scripts/verify.sh .
-   ```
-   **LOOP: if fails → read error, fix code, re-run verify.sh. Repeat until exit 0 or 3 attempts exhausted. Do NOT assume one fix resolved everything.**
-
-6. Write final verdict to `apps/<slug>/ralph/FINAL_VERDICT.md`
-
-**verify.sh must exit 0 before declaring BUILD COMPLETE.**
+4. Follow `pipeline/build.md` — plan → milestones → verify loop → verdict
 
 PRD path: $ARGUMENTS

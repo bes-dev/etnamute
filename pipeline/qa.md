@@ -93,11 +93,41 @@ npx jest --passWithNoTests
 
 If tests fail → fix before proceeding.
 
-### Level 3: Runtime Smoke Test
+### Level 3: Runtime Verification (MANDATORY)
 
-After Level 1 and Level 2 pass, verify the app actually runs.
+After Level 1 and Level 2 pass, verify the app actually runs without runtime errors.
 
-**If Maestro + dev build available (preferred):**
+**`npx expo export` catches bundle errors but NOT runtime errors.** APIs that bundle correctly but crash at runtime (e.g., `SplashModule.internalPreventAutoHideAsync is not a function`) are only caught by actually running the app.
+
+**Step 1: Start the app on simulator and check for errors:**
+
+```bash
+# Start expo and capture log
+npx expo start --ios 2>&1 | tee /tmp/expo-runtime.log &
+EXPO_PID=$!
+
+# Wait for bundling + initial render
+sleep 30
+
+# Check for runtime errors in log
+if grep -qiE "ERROR|TypeError|ReferenceError|Invariant Violation|is not a function|is undefined|Cannot read|Cannot find" /tmp/expo-runtime.log; then
+  echo "FAIL: Runtime errors detected"
+  grep -iE "ERROR|TypeError|ReferenceError" /tmp/expo-runtime.log
+  kill $EXPO_PID 2>/dev/null
+  exit 1
+fi
+
+echo "PASS: No runtime errors"
+kill $EXPO_PID 2>/dev/null
+```
+
+**If runtime errors found:**
+1. Read the error message — identify which module/function is broken
+2. Fetch docs via mcpdoc for the problematic module — API may have changed
+3. Fix the code
+4. Re-run Level 3
+
+**Step 2: Maestro smoke test (if available):**
 
 Generate a smoke test flow from PRD key screens:
 
@@ -118,24 +148,16 @@ appId: <bundle-id>
 
 Run: `maestro test --include-tags smoke .maestro/`
 
-**If Maestro not available (fallback):**
+**Common runtime errors and fixes:**
 
-Start Metro, verify bundling completes, kill:
+| Error pattern | Likely cause | Fix |
+|---|---|---|
+| `X is not a function (it is undefined)` | API changed between SDK versions | Fetch current docs via mcpdoc |
+| `Cannot find module` | Missing dependency | `npx expo install <package>` |
+| `Invariant Violation` | React component error | Check component props and imports |
+| `TypeError: Cannot read property` | Null/undefined access | Add null checks or fix data flow |
 
-```bash
-timeout 60 npx expo start --no-dev --minify 2>&1 | tee /tmp/expo-start.log &
-EXPO_PID=$!
-sleep 30
-if grep -q "Bundling complete\|Bundled" /tmp/expo-start.log; then
-  echo "PASS: App bundles and starts"
-else
-  echo "FAIL: App did not bundle within 30s"
-  cat /tmp/expo-start.log
-fi
-kill $EXPO_PID 2>/dev/null
-```
-
-If runtime smoke fails → fix before proceeding.
+If runtime smoke fails → fix before proceeding. Max 3 iterations.
 
 ---
 

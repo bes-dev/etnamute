@@ -276,7 +276,9 @@ Follow `pipeline/qa.md`. Three mandatory levels after EVERY milestone:
 2. **Tests**: write and run Jest tests for stores, utils, screen renders
 3. **Runtime**: Maestro smoke test (if available) or Metro start verification
 
-ALL three must pass before proceeding. `npx expo export` is critical — it catches what tsc misses (missing deps, broken imports, invalid main field). Do NOT declare BUILD COMPLETE until the app actually bundles and tests pass.
+ALL three must pass before proceeding.
+
+**CRITICAL**: `npx expo export` catches bundle errors but NOT runtime errors. APIs that bundle correctly can still crash at runtime (e.g., changed SDK APIs). Level 3 (actually running the app on simulator and checking logs for errors) is MANDATORY, not optional. Do NOT declare BUILD COMPLETE until the app runs on simulator without runtime errors.
 
 ---
 

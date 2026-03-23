@@ -17,13 +17,14 @@ Improve an existing app. Read `pipeline/improve.md` and follow ALL steps:
    **Level 3 (CRITICAL):**
    ```bash
    npx expo start --ios 2>&1 | tee /tmp/expo-runtime.log &
-   sleep 30
-   grep -iE "ERROR|TypeError|ReferenceError|is not a function|is undefined|Exception in HostFunction" /tmp/expo-runtime.log
    ```
-   If errors → fix, re-run. Kill expo after: `kill %1`
+   Wait 45-60 seconds, then:
+   ```bash
+   cat /tmp/expo-runtime.log | grep -iE "ERROR|TypeError|ReferenceError|is not a function|is undefined|Exception in HostFunction"
+   ```
+   Kill: `kill %1 2>/dev/null`
+   **If ANY matches → app is BROKEN. Fix and re-run. "Bundled successfully" ≠ app works.**
 
 6. Report — versioned summary with QA results, wait for feedback
-
-**You MUST run the app on simulator and verify zero ERROR lines before reporting success.**
 
 Change request: $ARGUMENTS

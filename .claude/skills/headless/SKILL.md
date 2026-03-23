@@ -17,13 +17,14 @@ Build an app from a ready PRD. No interview, no interaction.
    **Level 3 (CRITICAL):**
    ```bash
    npx expo start --ios 2>&1 | tee /tmp/expo-runtime.log &
-   sleep 30
-   grep -iE "ERROR|TypeError|ReferenceError|is not a function|is undefined|Exception in HostFunction" /tmp/expo-runtime.log
    ```
-   If errors → fix, re-run. Kill expo after: `kill %1`
+   Wait 45-60 seconds, then:
+   ```bash
+   cat /tmp/expo-runtime.log | grep -iE "ERROR|TypeError|ReferenceError|is not a function|is undefined|Exception in HostFunction"
+   ```
+   Kill: `kill %1 2>/dev/null`
+   **If ANY matches → app is BROKEN. Fix and re-run. "Bundled successfully" ≠ app works.**
 
 6. Write final verdict to `apps/<slug>/ralph/FINAL_VERDICT.md`
-
-**You MUST run the app on simulator and verify zero ERROR lines before declaring BUILD COMPLETE.**
 
 PRD path: $ARGUMENTS

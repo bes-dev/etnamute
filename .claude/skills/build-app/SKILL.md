@@ -24,18 +24,27 @@ Build a new mobile app. Follow the full pipeline:
    ```
    If fails → fix before proceeding.
 
-   **Level 3 — Runtime check (CRITICAL — do NOT skip):**
+   **Level 3 — Runtime check (CRITICAL):**
    ```bash
    npx expo start --ios 2>&1 | tee /tmp/expo-runtime.log &
-   sleep 30
-   grep -iE "ERROR|TypeError|ReferenceError|is not a function|is undefined|Exception in HostFunction" /tmp/expo-runtime.log
    ```
-   If ANY errors in log → read the error, fetch docs via mcpdoc, fix, re-run.
-   KILL the expo process after checking: `kill %1`
+   Then WAIT — do NOT immediately check. The runtime errors appear AFTER bundling completes.
+   After 45-60 seconds:
+   ```bash
+   cat /tmp/expo-runtime.log | grep -iE "ERROR|TypeError|ReferenceError|is not a function|is undefined|Exception in HostFunction|Invariant Violation"
+   ```
+   Then kill the process:
+   ```bash
+   kill %1 2>/dev/null
+   ```
+
+   **If grep finds ANY matches — the app is BROKEN.** Read the error, fetch docs via mcpdoc, fix the code, and re-run Level 3. Do NOT proceed.
+
+   **If grep finds nothing — PASS.** Proceed to next milestone.
+
+   **COMMON TRAP: "Bundled successfully" does NOT mean the app works.** Reanimated, SplashScreen, expo-av, and other native modules can bundle fine but crash at runtime. The ERROR lines appear in the log AFTER the "Bundled Xms" line. You MUST wait long enough and grep the FULL log.
 
 5. Write final verdict to `apps/<slug>/ralph/FINAL_VERDICT.md`
-
-**CRITICAL: The #1 failure mode is declaring BUILD COMPLETE without running Level 3. Reanimated, SplashScreen, and other native modules can bundle correctly but crash at runtime. You MUST run the app on simulator and verify zero ERROR lines in the log before declaring complete.**
 
 User's idea: $ARGUMENTS
 

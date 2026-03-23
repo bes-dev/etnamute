@@ -99,27 +99,26 @@ After Level 1 and Level 2 pass, verify the app actually runs without runtime err
 
 **`npx expo export` catches bundle errors but NOT runtime errors.** APIs that bundle correctly but crash at runtime (e.g., `SplashModule.internalPreventAutoHideAsync is not a function`) are only caught by actually running the app.
 
-**Step 1: Start the app on simulator and check for errors:**
+**Step 1: Start the app on simulator and capture log:**
 
 ```bash
-# Start expo and capture log
 npx expo start --ios 2>&1 | tee /tmp/expo-runtime.log &
-EXPO_PID=$!
-
-# Wait for bundling + initial render
-sleep 30
-
-# Check for runtime errors in log
-if grep -qiE "ERROR|TypeError|ReferenceError|Invariant Violation|is not a function|is undefined|Cannot read|Cannot find" /tmp/expo-runtime.log; then
-  echo "FAIL: Runtime errors detected"
-  grep -iE "ERROR|TypeError|ReferenceError" /tmp/expo-runtime.log
-  kill $EXPO_PID 2>/dev/null
-  exit 1
-fi
-
-echo "PASS: No runtime errors"
-kill $EXPO_PID 2>/dev/null
 ```
+
+**Step 2: WAIT 45-60 seconds.** Runtime errors appear AFTER "Bundled Xms" — not before. Do NOT check immediately after seeing "Bundled".
+
+**Step 3: Check the FULL log for errors:**
+
+```bash
+cat /tmp/expo-runtime.log | grep -iE "ERROR|TypeError|ReferenceError|Invariant Violation|is not a function|is undefined|Cannot read|Cannot find|Exception in HostFunction"
+```
+
+**Step 4: Kill the process:**
+```bash
+kill %1 2>/dev/null
+```
+
+**CRITICAL: "Bundled successfully" does NOT mean the app works.** Reanimated, SplashScreen, expo-av, and other native modules can bundle fine but crash at runtime. The ERROR lines appear AFTER the "Bundled" line in the log.
 
 **If runtime errors found:**
 1. Read the error message — identify which module/function is broken

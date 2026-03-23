@@ -100,7 +100,34 @@ The checklist has two parts: **static checks** (same for every app) and **dynami
 
 ASO, research, and marketing artifacts are NOT checked during build QA — they are generated later via `/market-app`.
 
-#### A6. React Native Skills Compliance (5% weight)
+#### A5. Smoke Testing (OPTIONAL — if Maestro + dev build available)
+
+Run milestone-specific smoke test if Maestro is installed and a dev build exists:
+
+After M1: `maestro test --include-tags m1 .maestro/` — app launches, no crash, no red screen
+After M2: `maestro test --include-tags m2 .maestro/` — all screens navigable, no blank screens
+After M3: `maestro test --include-tags m3 .maestro/` — core flow works, data persists after kill/relaunch
+After M5: `maestro test --include-tags m5 .maestro/` — onboarding works, settings accessible
+
+If Maestro is not available or no dev build exists — skip. Note in report that smoke tests were skipped.
+
+Generate `.maestro/` flows from PRD §6 (Key Screens) using testIDs from the actual code:
+- One flow per milestone, tagged appropriately
+- `waitForAnimationToEnd` after every navigation
+- `extendedWaitUntil` for async content
+- Crash detection: `assertNotVisible: "Invariant Violation"`
+- See `.claude/skills/maestro/SKILL.md` for patterns
+
+#### A6. Visual Verification (OPTIONAL — if Maestro + DESIGN.md available)
+
+If `apps/<slug>/spec/DESIGN.md` exists and Maestro is available:
+
+1. Capture key screens via `takeScreenshot`
+2. Use `assertWithAI` to verify screens match DESIGN.md descriptions
+3. If issues found: fix code, re-capture, max 3 iterations
+4. If no DESIGN.md — skip visual verification
+
+#### A7. React Native Skills Compliance (5% weight)
 
 - [ ] No CRITICAL violations (async patterns, barrel imports)
 - [ ] No HIGH violations (FlatList usage, memory cleanup)

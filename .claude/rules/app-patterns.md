@@ -72,3 +72,9 @@ Library choices and architectural patterns. When implementing any of these areas
 - Setting `accessible={true}` on a parent View groups all children into one accessible element — changing hierarchy silently breaks this
 - When replacing components (e.g. TouchableOpacity → Pressable), transfer ALL accessibility props — they don't carry over automatically
 - Dynamic content changes (mount/unmount) need explicit announcements — `accessibilityLiveRegion` on Android, `AccessibilityInfo.announceForAccessibility()` on iOS
+
+## Testability
+
+- Add `testID` to all interactive elements (buttons, inputs, tabs, navigation targets) — required for Maestro automation
+- Naming convention: `testID="btn-submit"`, `testID="input-email"`, `testID="tab-home"`
+- `testID` is separate from `accessibilityLabel` — both should be set

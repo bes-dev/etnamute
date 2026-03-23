@@ -140,6 +140,7 @@ Execute in this order:
 6. If routes changed — old routes have redirects or stubs
 7. If data model changed — migrations added for SQLite and/or Zustand persisted stores
 8. If UX changed — styles consistent across all affected screens, accessibility intact
+9. If UX changed + Maestro available — run smoke test on affected screens, capture screenshots for visual verification against DESIGN.md
 
 ### Step 7: Report
 

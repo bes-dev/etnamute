@@ -14,7 +14,8 @@ Improve an existing app. Read `pipeline/improve.md` and follow ALL steps:
    ```bash
    ../../scripts/verify.sh .
    ```
-   If fails → fix and re-run. Max 3 attempts.
+   **LOOP: if fails → read error, fix code, re-run verify.sh. Repeat until exit 0 or 3 attempts exhausted. Do NOT assume one fix resolved everything.**
+
 6. Report — versioned summary with verify.sh output, wait for feedback
 
 **verify.sh must exit 0 before reporting success.**

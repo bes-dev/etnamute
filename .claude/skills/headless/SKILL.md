@@ -14,7 +14,8 @@ Build an app from a ready PRD. No interview, no interaction.
    ```bash
    ../../scripts/verify.sh .
    ```
-   If fails → fix and re-run. Max 3 attempts per milestone.
+   **LOOP: if fails → read error, fix code, re-run verify.sh. Repeat until exit 0 or 3 attempts exhausted. Do NOT assume one fix resolved everything.**
+
 6. Write final verdict to `apps/<slug>/ralph/FINAL_VERDICT.md`
 
 **verify.sh must exit 0 before declaring BUILD COMPLETE.**

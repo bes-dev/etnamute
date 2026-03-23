@@ -163,15 +163,15 @@ Improve ──[changes + verify]──▶ Done ──[more changes]──▶ Imp
 
 ### Phase 2: Build (AUTONOMOUS)
 
-| Milestone | Deliverables | Ralph QA |
-|-----------|-------------|----------|
-| M1: Scaffold | resolve versions via create-expo-app, package.json, NativeWind config, directory structure | ≥97% |
-| M2: Screens | navigation, core UI screens | ≥97% |
-| M3: Features | core functionality, data persistence | ≥97% |
-| M4: Monetization | RevenueCat, paywall, gating — **skip if free** | ≥97% |
-| M5: Polish | onboarding, assets, README, RUNBOOK, TESTING, LAUNCH_CHECKLIST, privacy_policy | ≥97% |
+| Milestone | Deliverables | Tests | QA |
+|-----------|-------------|-------|-----|
+| M1: Scaffold | versions, package.json, NativeWind, jest setup | — | build + bundle |
+| M2: Screens | navigation, core UI | screen render tests | build + bundle + tests |
+| M3: Features | core functionality, data | store + util + persistence tests | build + bundle + tests + smoke |
+| M4: Monetization | RevenueCat, paywall — **skip if free** | paywall mock tests | build + bundle + tests |
+| M5: Polish | onboarding, assets, docs | onboarding + settings tests | build + bundle + tests + smoke |
 
-After each milestone: implement → verify → Ralph QA → proceed only after ≥97%.
+After each milestone: implement → write tests → run QA pipeline (build + tests + runtime) → proceed only if ALL pass.
 
 ### Phase 3: Finalization
 
@@ -270,10 +270,13 @@ Available via mcpdoc (`.mcp.json`):
 
 ## BUILD VERIFICATION
 
-Before declaring BUILD COMPLETE:
-1. `npm install` completes without errors
-2. `npx tsc --noEmit` passes
-3. No bypass flags used
+Follow `pipeline/qa.md`. Three mandatory levels after EVERY milestone:
+
+1. **Build**: `npm install` + `npx tsc --noEmit` + `npx expo export` (bundle check)
+2. **Tests**: write and run Jest tests for stores, utils, screen renders
+3. **Runtime**: Maestro smoke test (if available) or Metro start verification
+
+ALL three must pass before proceeding. `npx expo export` is critical — it catches what tsc misses (missing deps, broken imports, invalid main field). Do NOT declare BUILD COMPLETE until the app actually bundles and tests pass.
 
 ---
 

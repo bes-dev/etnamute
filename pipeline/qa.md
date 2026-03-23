@@ -1,555 +1,250 @@
-# Ralph Mode: Adversarial Polish Loop
+# QA Pipeline
 
-You are Claude Code operating in **Ralph Mode** — the quality assurance stage of Etnamute.
-
-Ralph Mode is an adversarial review process that blocks success until the build meets quality standards.
+Verify the app actually works — not just compiles.
 
 ---
 
-## THE ROLES
+## THREE MANDATORY LEVELS
 
-### Ralph (Adversary)
+Every milestone must pass all three levels before proceeding. No exceptions.
 
-- Reviews the build critically
-- Identifies issues that block shipping
-- Demands specific fixes
-- Blocks success until satisfied
+### Level 1: Build Verification
 
-### Builder (Executor)
+```bash
+# 1. Dependencies install cleanly
+npm install
 
-- Fixes issues raised by Ralph
-- Documents what was fixed
-- Cannot claim success without Ralph's approval
+# 2. TypeScript compiles
+npx tsc --noEmit
+
+# 3. App bundles without errors (catches missing deps, broken imports, invalid JSX)
+npx expo export 2>&1
+```
+
+**`npx expo export` is the critical check.** It does a full production bundle. If the `main` field is wrong, a dependency is missing, an import path is broken, or JSX is invalid — it fails here, not when the user tries to run the app.
+
+If any of these fail → fix before proceeding. Do NOT declare milestone complete.
+
+### Level 2: Automated Tests
+
+Write and run tests for every milestone. Tests live in `__tests__/` alongside the code they test.
+
+**What to test per milestone:**
+
+**M1 (Scaffold):**
+- No tests needed — Level 1 is sufficient
+
+**M2 (Screens):**
+- Each screen renders without crash: `render(<Screen />)` doesn't throw
+- Navigation structure is correct: expected screens exist in the layout
+
+**M3 (Features):**
+- Store logic: each Zustand store action produces correct state
+- Utility functions: pure functions with known inputs/outputs
+- Data persistence: SQLite operations (insert, query, update, delete)
+- Core user flow: create item → verify in store → verify persistence
+
+**M4 (Monetization, if enabled):**
+- RevenueCat mock: paywall renders, premium gate works with mock entitlements
+
+**M5 (Polish):**
+- Onboarding flow renders all steps
+- Settings screen renders with correct defaults
+
+**Test framework:** Jest + jest-expo (installed via `npx expo install jest-expo jest`).
+
+**Minimal test structure:**
+
+```typescript
+// __tests__/stores/timer-store.test.ts
+import { useTimerStore } from '../../src/stores/timer-store';
+
+describe('TimerStore', () => {
+  beforeEach(() => useTimerStore.getState().reset());
+
+  it('starts timer', () => {
+    useTimerStore.getState().start();
+    expect(useTimerStore.getState().isRunning).toBe(true);
+  });
+
+  it('increments completed sessions', () => {
+    useTimerStore.getState().completeSession();
+    expect(useTimerStore.getState().completedSessions).toBe(1);
+  });
+});
+```
+
+```typescript
+// __tests__/screens/home.test.tsx
+import { render } from '@testing-library/react-native';
+import HomeScreen from '../../app/(tabs)/home';
+
+describe('HomeScreen', () => {
+  it('renders without crash', () => {
+    expect(() => render(<HomeScreen />)).not.toThrow();
+  });
+});
+```
+
+**Run tests:**
+```bash
+npx jest --passWithNoTests
+```
+
+If tests fail → fix before proceeding.
+
+### Level 3: Runtime Smoke Test
+
+After Level 1 and Level 2 pass, verify the app actually runs.
+
+**If Maestro + dev build available (preferred):**
+
+Generate a smoke test flow from PRD key screens:
+
+```yaml
+appId: <bundle-id>
+---
+- launchApp:
+    clearState: true
+- waitForAnimationToEnd:
+    timeout: 10000
+- extendedWaitUntil:
+    visible: ".*"
+    timeout: 15000
+- assertNotVisible: "Invariant Violation"
+- assertNotVisible: "TypeError"
+- takeScreenshot: smoke_home
+```
+
+Run: `maestro test --include-tags smoke .maestro/`
+
+**If Maestro not available (fallback):**
+
+Start Metro, verify bundling completes, kill:
+
+```bash
+timeout 60 npx expo start --no-dev --minify 2>&1 | tee /tmp/expo-start.log &
+EXPO_PID=$!
+sleep 30
+if grep -q "Bundling complete\|Bundled" /tmp/expo-start.log; then
+  echo "PASS: App bundles and starts"
+else
+  echo "FAIL: App did not bundle within 30s"
+  cat /tmp/expo-start.log
+fi
+kill $EXPO_PID 2>/dev/null
+```
+
+If runtime smoke fails → fix before proceeding.
 
 ---
 
-## EXECUTION FLOW
+## WHEN TO RUN
 
-```
-BUILD COMPLETE
-     ↓
-Ralph reads spec/prd.md (PRD)
-     ↓
-Ralph generates DYNAMIC CHECKLIST from PRD
-     ↓
-Ralph reviews (Iteration 1)
-     ↓
-Ralph writes: polish/ralph_report_1.md
-     ↓
-If PASS → Write ralph_final_verdict.md (PASS) → DONE
-If FAIL → Builder fixes issues
-     ↓
-Builder writes: polish/builder_resolution_1.md
-     ↓
-Ralph reviews (Iteration 2)
-     ↓
-... (max 3 iterations)
-     ↓
-If FAIL after 3 → Write ralph_final_verdict.md (FAIL) → HARD FAILURE
-```
+| Milestone | Level 1 | Level 2 | Level 3 |
+|-----------|---------|---------|---------|
+| M1: Scaffold | YES | No | YES (bundle only) |
+| M2: Screens | YES | Screen render tests | YES |
+| M3: Features | YES | Store + util + persistence tests | YES |
+| M4: Monetization | YES | PayWall mock tests | YES |
+| M5: Polish | YES | Onboarding + settings tests | YES |
+| Final QA | YES | Full test suite | YES + visual verification |
 
 ---
 
-## STEP 0: READ THE PRD (MANDATORY BEFORE ANY REVIEW)
+## WRITING TESTS
 
-Before running any checklist, Ralph MUST:
+Claude MUST write tests as part of each milestone, not as an afterthought.
 
-1. **Read `spec/prd.md`** (the approved PRD)
-2. **Extract** the following from the PRD:
-   - App name and category (§1)
-   - All features listed in §4 (Core Features) — each becomes a checklist item
-   - Non-goals from §2 — Ralph must NOT demand these
-   - Monetization model from §5 — determines if RevenueCat checks apply
-   - Target user from §3 — informs UX expectations
-   - Key screens from §6 — each becomes a UI check
-   - Technical constraints from §7 — informs what to check/skip
-   - Quality bars from §8 — specific performance/accessibility targets
+**Rules:**
+- Tests are written ALONGSIDE the code, in the same milestone
+- Each store gets tests for its actions
+- Each utility function gets tests for known inputs/outputs
+- Each screen gets at minimum a "renders without crash" test
+- Tests must actually pass before milestone is complete
 
-3. **Generate a dynamic checklist** (see next section)
+**Setup (during M1 scaffold):**
 
-If `spec/prd.md` is missing, Ralph FAILS immediately with "No PRD found" verdict.
+Add to package.json:
+```json
+{
+  "scripts": {
+    "test": "jest"
+  },
+  "jest": {
+    "preset": "jest-expo",
+    "transformIgnorePatterns": [
+      "node_modules/(?!((jest-)?react-native|@react-native(-community)?)|expo(nent)?|@expo(nent)?/.*|@expo-google-fonts/.*|react-navigation|@react-navigation/.*|@sentry/react-native|native-base|react-native-svg)"
+    ]
+  }
+}
+```
+
+Install: `npx expo install jest-expo jest @testing-library/react-native -- --save-dev`
+
+**Do NOT skip this during scaffold.** Missing test infrastructure is why tests never get written.
 
 ---
 
-## RALPH'S REVIEW CHECKLIST
+## PRD-AWARE REVIEW (formerly "Ralph")
 
-The checklist has two parts: **static checks** (same for every app) and **dynamic checks** (generated from the PRD).
+After all three levels pass, review the code against the PRD:
 
-### PART A: Static Checks (same for every app)
+1. Read `spec/prd.md`
+2. For each feature in §4 — verify it's implemented and has tests
+3. For each non-goal in §2 — verify no scope creep
+4. If DESIGN.md exists — verify visual decisions match (use Maestro screenshots if available)
+5. Check code quality against auto-discovered rules (`.claude/rules/`)
 
-#### A1. Technical Soundness
-
-- [ ] `npm install` completes without errors
-- [ ] `npx expo start` boots without fatal errors
-- [ ] No TypeScript compilation errors
-- [ ] No obvious runtime crashes
-
-#### A2. Production Readiness
-
-- [ ] App icon exists (1024x1024)
-- [ ] Splash screen exists
-- [ ] Bundle identifier is set
-- [ ] Privacy policy is included
-- [ ] App name is set in config
-
-#### A3. Research Artifacts (BLOCKING)
-
-- [ ] Note: research/ artifacts are generated later via `/market-app`, not checked during build QA
-
-#### A4. Note
-
-ASO, research, and marketing artifacts are NOT checked during build QA — they are generated later via `/market-app`.
-
-#### A5. Smoke Testing (OPTIONAL — if Maestro + dev build available)
-
-Run milestone-specific smoke test if Maestro is installed and a dev build exists:
-
-After M1: `maestro test --include-tags m1 .maestro/` — app launches, no crash, no red screen
-After M2: `maestro test --include-tags m2 .maestro/` — all screens navigable, no blank screens
-After M3: `maestro test --include-tags m3 .maestro/` — core flow works, data persists after kill/relaunch
-After M5: `maestro test --include-tags m5 .maestro/` — onboarding works, settings accessible
-
-If Maestro is not available or no dev build exists — skip. Note in report that smoke tests were skipped.
-
-Generate `.maestro/` flows from PRD §6 (Key Screens) using testIDs from the actual code:
-- One flow per milestone, tagged appropriately
-- `waitForAnimationToEnd` after every navigation
-- `extendedWaitUntil` for async content
-- Crash detection: `assertNotVisible: "Invariant Violation"`
-- See `.claude/skills/maestro/SKILL.md` for patterns
-
-#### A6. Visual Verification (OPTIONAL — if Maestro + DESIGN.md available)
-
-If `apps/<slug>/spec/DESIGN.md` exists and Maestro is available:
-
-1. Capture key screens via `takeScreenshot`
-2. Use `assertWithAI` to verify screens match DESIGN.md descriptions
-3. If issues found: fix code, re-capture, max 3 iterations
-4. If no DESIGN.md — skip visual verification
-
-#### A7. React Native Skills Compliance (5% weight)
-
-- [ ] No CRITICAL violations (async patterns, barrel imports)
-- [ ] No HIGH violations (FlatList usage, memory cleanup)
-- [ ] Promise.all used for parallel data fetching
-- [ ] FlatList used for lists > 10 items
-- [ ] useEffect cleanup functions present
-
-**Reference:** `.claude/skills/react-native/AGENTS.md`
-
-#### A7. Mobile UI Skills Compliance (5% weight)
-
-- [ ] Touch targets meet minimum size (44pt iOS / 48dp Android)
-- [ ] All interactive elements have accessibility labels
-- [ ] Skeleton loaders for async content (not spinners)
-- [ ] Designed empty states with icon, message, and CTA
-- [ ] Styled error states with retry option
-- [ ] Safe areas properly handled (notch, home indicator)
-
-**Reference:** `.claude/skills/mobile-ui/SKILL.md`
-
-#### A8. Mobile Interface Guidelines (5% weight)
-
-| Priority | Check                                  | How to Verify                       |
-| -------- | -------------------------------------- | ----------------------------------- |
-| HIGH     | Touch targets ≥44pt iOS / 48dp Android | Measure all buttons, links, icons   |
-| HIGH     | FlatList for lists >20 items           | No ScrollView with many items       |
-| HIGH     | Memory cleanup in useEffect            | All subscriptions/timers cleaned up |
-| HIGH     | VoiceOver/TalkBack compatible          | Test with screen reader             |
-| HIGH     | Safe areas with SafeAreaView           | Notch/home indicator respected      |
-| MEDIUM   | Gesture responders don't conflict      | Pan/swipe gestures work smoothly    |
-| MEDIUM   | prefers-reduced-motion respected       | Check for reduced motion            |
-| MEDIUM   | Reanimated for animations              | Not using LayoutAnimation           |
-| MEDIUM   | TextInput keyboard handling            | Keyboard doesn't cover inputs       |
-| MEDIUM   | Platform-specific adaptations          | iOS/Android differences handled     |
-
-**Reference:** `.claude/skills/mobile-interface/AGENTS.md`
-
-### PART B: Dynamic Checks (generated from PRD)
-
-Ralph MUST generate these checks by reading the PRD. The format below shows the template — Ralph fills in the `[brackets]` from actual PRD content.
-
-#### B1. Feature Completeness (from PRD §4)
-
-For EACH feature listed in PRD §4, generate a check:
-
-```
-- [ ] Feature "[Feature Name from §4]" is implemented
-  - User can: [User Action from §4]
-  - App responds: [System Response from §4]
-  - Success state: [Success State from §4]
-  - Location: [which file/screen implements this]
-```
-
-**Example** (for a habit tracker app):
-
-```
-- [ ] Feature "Daily Habit Check-in" is implemented
-  - User can: tap a habit to mark it complete for today
-  - App responds: animates checkmark, updates streak counter
-  - Success state: habit shows as complete, streak increments
-  - Location: app/home.tsx, src/components/HabitCard.tsx
-
-- [ ] Feature "Streak Tracking" is implemented
-  - User can: view current and longest streak per habit
-  - App responds: displays streak badge with fire icon
-  - Success state: streak resets on missed day, longest streak persists
-  - Location: src/components/StreakBadge.tsx, src/hooks/useStreak.ts
-```
-
-#### B2. Screen Verification (from PRD §6 Key Screens)
-
-For EACH screen listed in PRD §6, generate a check:
-
-```
-- [ ] Screen "[Screen Name]" exists and is functional
-  - Purpose: [from PRD]
-  - Key elements: [what should be visible]
-  - Navigation: [how to reach this screen]
-```
-
-#### B3. Non-Goals Compliance (from PRD §2)
-
-For EACH non-goal listed in PRD §2, generate a check:
-
-```
-- [ ] Non-goal "[Non-Goal]" is respected — no scope creep into this area
-```
-
-#### B4. Monetization (CONDITIONAL — from PRD §5)
-
-**If PRD §5 says "Free — no monetization":**
-
-```
-- [ ] No RevenueCat SDK in dependencies
-- [ ] No paywall screen exists
-- [ ] No purchases.ts service exists
-- [ ] No premium gating logic in any screen
-- [ ] No subscription-related UI elements
-```
-
-**If PRD §5 specifies a paid model:**
-
-```
-- [ ] RevenueCat SDK is in package.json
-- [ ] Paywall screen exists and matches PRD §5 pricing
-- [ ] Premium features from PRD §5 are correctly gated
-- [ ] Free tier provides value listed in PRD §5
-- [ ] Paywall triggers match PRD §5 specification
-- [ ] Subscription compliance: auto-renewal disclosure, cancel messaging, restore purchases
-```
-
-#### B5. Target User Fit (from PRD §3)
-
-```
-- [ ] App's complexity matches target user: [persona from §3]
-- [ ] Vocabulary/tone matches target audience: [audience from §3]
-- [ ] Usage context considered: [when/where from §3]
-```
-
-#### B6. Quality Bars (from PRD §8)
-
-For each specific quality bar in PRD §8, generate a check:
-
-```
-- [ ] Quality bar met: [specific bar from §8]
-```
-
-#### B7. App-Specific Concerns (Ralph's judgment)
-
-Based on the app's domain, Ralph SHOULD add domain-specific checks. Examples:
-
-**For a fitness/health app:**
-- [ ] Units are correct (kg/lbs, km/miles)
-- [ ] Timer/stopwatch functionality works correctly
-- [ ] Health data is stored securely (local only)
-
-**For a finance/expense tracker:**
-- [ ] Currency formatting is correct
-- [ ] Calculations are accurate (no floating point display issues)
-- [ ] Data export produces valid CSV/JSON
-
-**For a note-taking app:**
-- [ ] Text editing handles long content without performance issues
-- [ ] Auto-save works (no data loss)
-- [ ] Search finds content across all notes
-
-**For a game:**
-- [ ] Game loop runs at consistent frame rate
-- [ ] Score/progress saves correctly
-- [ ] Controls are responsive
-
-Ralph generates 3-5 domain-specific checks based on the app category.
+**This is the LAST step**, not the first. Code review is pointless if the app doesn't run.
 
 ---
 
-## RALPH REPORT FORMAT
+## FAILURE HANDLING
 
-```markdown
-# Ralph Report - Iteration [N]
+| Failure | Action |
+|---------|--------|
+| `npm install` fails | Fix dependency conflicts. Never use `--legacy-peer-deps` or `--force`. |
+| `npx tsc --noEmit` fails | Fix TypeScript errors. |
+| `npx expo export` fails | Fix the bundle error — this is what would crash the app at runtime. |
+| Tests fail | Fix the code, not the test (unless test is wrong). |
+| Maestro smoke fails | Check Metro logs, check for runtime errors, fix crash. |
+| PRD review finds gaps | Implement missing features before proceeding. |
 
-**Build**: apps/<app-slug>/
-**Spec**: spec/prd.md
-**Date**: [ISO timestamp]
-**App**: [App Name from PRD §1]
-**Category**: [App Category from PRD §1]
-**Monetization**: [Model from PRD §5]
+**Max 3 fix-and-retest iterations per milestone.** If still failing after 3 — document blockers, inform user.
 
-## Verdict: [PASS / FAIL]
+---
 
-## Summary
+## FINAL QA (before BUILD COMPLETE)
 
-[2-3 sentence overall assessment that references the specific app and its features]
+Run the full suite across the entire app:
 
-## Dynamic Checklist (generated from PRD)
+```bash
+# Level 1
+npm install && npx tsc --noEmit && npx expo export
 
-### Features (PRD §4)
-[List each feature check with PASS/FAIL]
+# Level 2
+npx jest
 
-### Screens (PRD §6)
-[List each screen check with PASS/FAIL]
-
-### Non-Goals (PRD §2)
-[List each non-goal compliance check]
-
-### Monetization (PRD §5)
-[Monetization-specific checks based on user's choice]
-
-### Target User Fit (PRD §3)
-[Audience-specific checks]
-
-### Domain-Specific
-[App-type-specific checks]
-
-## Static Checklist Results
-
-### Technical Soundness: [PASS/FAIL]
-### Production Readiness: [PASS/FAIL]
-### Research Artifacts: [PASS/FAIL]
-### ASO Artifacts: [PASS/FAIL]
-### Marketing Artifacts: [PASS/FAIL]
-### Skills Compliance: [PASS/FAIL]
-
-## Issues Found
-
-### Issue 1: [Title]
-
-- **Category**: [Feature / UI / Technical / Production / Spec / Domain]
-- **Severity**: [Blocking / Major / Minor]
-- **PRD Reference**: [Which PRD section this relates to, e.g., "§4 Feature 2"]
-- **Location**: [File path or area]
-- **Description**: [What's wrong]
-- **Required Fix**: [Specific action needed]
-
-### Issue 2: [Title]
-
-[Same structure]
-
-## Passed Checks
-
-- [List checks that passed]
-
-## Deferred (Non-Blocking)
-
-- [Issues that are acceptable for MVP but noted]
-
-## Next Steps
-
-[If FAIL: What builder must fix before next review]
-[If PASS: Confirmation that build is ready]
+# Level 3 (if Maestro available)
+maestro test --include-tags smoke .maestro/
 ```
 
----
-
-## BUILDER RESOLUTION FORMAT
-
-```markdown
-# Builder Resolution - Iteration [N]
-
-**Responding to**: polish/ralph_report_[N].md
-**Date**: [ISO timestamp]
-
-## Fixes Applied
-
-### Issue 1: [Title from Ralph's report]
-
-- **PRD Reference**: [§ section]
-- **Status**: [Fixed / Partially Fixed / Cannot Fix]
-- **Changes Made**: [What was done]
-- **Files Modified**: [List of files]
-- **Verification**: [How to confirm the fix]
-
-### Issue 2: [Title from Ralph's report]
-
-[Same structure]
-
-## Notes
-
-[Any context for Ralph's next review]
-
-## Ready for Re-Review
-
-[Confirmation that fixes are complete]
-```
-
----
-
-## RALPH FINAL VERDICT FORMAT
-
-```markdown
-# Ralph Final Verdict
-
-**Build**: apps/<app-slug>/
-**Spec**: spec/prd.md
-**App**: [App Name]
-**Category**: [Category]
-**Monetization**: [Free / Freemium / Subscription / One-time]
-**Iterations**: [1-3]
-**Date**: [ISO timestamp]
-
-## VERDICT: [PASS / FAIL]
-
-## Summary
-
-[Final assessment referencing the specific app, its features, and target audience]
-
-## Quality Score
-
-### Dynamic (from PRD) — 40% total
-- Feature Completeness (§4): [X/Y features pass] (20%)
-- Screen Quality (§6): [X/Y screens pass] (10%)
-- Spec Compliance (§2 non-goals + §5 monetization): [1-5] (10%)
-
-### Static — 40% total
-- Technical Soundness: [1-5] (10%)
-- Production Readiness: [1-5] (10%)
-- Research Quality: [1-5] (10%)
-- ASO + Marketing Quality: [1-5] (10%)
-
-### Skills — 10% total
-- React Native Skills: [1-5] (5%)
-- Mobile UI + Interface: [1-5] (5%)
-
-### Domain Fit — 10% total
-- Target User Fit (§3): [1-5] (5%)
-- Domain-Specific Concerns: [1-5] (5%)
-
-## [If PASS] Approval
-
-This build meets Etnamute quality standards and is approved for shipping.
-
-## [If FAIL] Failure Reason
-
-[Explanation of why the build cannot be approved after 3 iterations]
-
-## Remaining Issues
-
-[List any outstanding issues - for PASS these are minor; for FAIL these are blocking]
-```
-
----
-
-## RALPH'S RULES
-
-### RALPH MUST
-
-- Read the PRD before generating any checklist
-- Generate feature-specific checks from PRD §4
-- Generate screen-specific checks from PRD §6
-- Check non-goal compliance from PRD §2
-- Adapt monetization checks based on PRD §5
-- Add domain-specific checks based on app category
-- Reference PRD sections in every issue found
-
-### RALPH MAY
-
-- Demand fixes for any issue on the checklist
-- Be strict about spec compliance
-- Require specific improvements
-- Block success indefinitely (up to max iterations)
-
-### RALPH MUST NOT
-
-- Expand scope beyond `prd.md`
-- Request features marked as non-goals in §2
-- Add "nice to have" requirements not in the PRD
-- Change the app's core direction
-- Be unreasonable about edge cases
-- Demand perfection beyond MVP quality
-- Demand monetization if PRD §5 says "Free"
-- Use a generic checklist without reading the PRD
-
-### SCOPE BOUNDARY
-
-The spec is law. If something is in the spec, it must be implemented.
-If something is NOT in the spec, Ralph cannot demand it.
-
----
-
-## ITERATION LIMITS
-
-- **Maximum iterations**: 3
-- **After iteration 3**: If still FAIL, the build fails permanently
-- **Each iteration**: Ralph reviews, Builder fixes, cycle repeats
-
-### Escalation Path
-
-- Iteration 1: Full review — generate dynamic checklist, check everything
-- Iteration 2: Focus on unfixed issues from iteration 1 (reuse same dynamic checklist)
-- Iteration 3: Final chance, only blocking issues matter
-
-### Hard Failure
-
-If after 3 iterations Ralph cannot approve:
-
-1. Write `ralph_final_verdict.md` with FAIL
-2. Document all remaining blocking issues
-3. The build is considered failed
-4. No app is shipped
-
----
-
-## ARTIFACTS
-
-All Ralph Mode artifacts go in `polish/` directory:
+ALL must pass. Then write `apps/<slug>/ralph/FINAL_VERDICT.md`:
 
 ```
-polish/
-├── ralph_report_1.md
-├── builder_resolution_1.md
-├── ralph_report_2.md          (if iteration 2)
-├── builder_resolution_2.md    (if iteration 2)
-├── ralph_report_3.md          (if iteration 3)
-├── builder_resolution_3.md    (if iteration 3)
-└── ralph_final_verdict.md     (always)
+PIPELINE: etnamute
+RALPH_VERDICT: PASS
+TIMESTAMP: <ISO-8601>
+
+VERIFIED:
+- npm install: PASS
+- tsc --noEmit: PASS
+- expo export (bundle): PASS
+- jest (X tests): PASS
+- maestro smoke: PASS / SKIPPED (not available)
+- PRD compliance: all features implemented
+- Code quality: rules checked
 ```
 
----
-
-## EXECUTION TRIGGER
-
-Ralph Mode activates after each milestone is complete.
-
-The build directory must exist at `apps/<app-slug>/` with:
-
-- package.json
-- app.config.js or app.json
-- src/ directory with screens
-- assets/ directory
-If the build directory is incomplete, Ralph FAILS immediately with "Incomplete Build" verdict.
-
-Note: research/, aso/, and marketing/ directories are NOT required during build QA — they are generated separately via `/market-app`.
-
----
-
-## SUCCESS DEFINITION
-
-A build is successful when:
-
-1. Ralph issues a PASS verdict
-2. `polish/ralph_final_verdict.md` contains "VERDICT: PASS"
-3. All blocking issues are resolved
-4. All PRD features from §4 are implemented
-5. Monetization matches PRD §5 (paid or free)
-
-Only then can the build be considered complete and ready for app store submission.
+Only THEN output BUILD COMPLETE.

@@ -58,29 +58,33 @@ If PRD §5 = free: write "No monetization — free app"
 Break into 5 milestones with checklists:
 
 **M1: Scaffold**
-- [ ] Run `npx create-expo-app@latest --template blank-typescript /tmp/expo-check` to get current compatible versions
-- [ ] Create package.json with versions from the template
+- [ ] Resolve versions via `npx create-expo-app@latest`
+- [ ] package.json with correct `"main": "expo-router/entry"`
 - [ ] app.config.js
 - [ ] TypeScript config
-- [ ] NativeWind setup: metro.config.js, babel.config.js, global.css (fetch docs via mcpdoc first)
+- [ ] NativeWind setup: metro.config.js, babel.config.js, global.css (fetch docs first)
+- [ ] **Jest + jest-expo + @testing-library/react-native setup**
 - [ ] Directory structure
-- [ ] Verify: `npm install` succeeds (no `--legacy-peer-deps`)
+- [ ] Verify: `npm install` + `npx tsc --noEmit` + `npx expo export` all pass
 
 **M2: Screens**
 - [ ] Root layout + navigation
 - [ ] All screens from PRD §6
-- [ ] Verify: `npx expo start` boots
+- [ ] **Tests: each screen renders without crash**
+- [ ] Verify: build + bundle + tests pass
 
 **M3: Features**
 - [ ] Each feature from PRD §4
 - [ ] Data persistence
-- [ ] Verify: core loop works end-to-end
+- [ ] **Tests: store actions, utility functions, persistence operations**
+- [ ] Verify: build + bundle + tests + smoke test pass
 
 **M4: Monetization** (skip if free)
 - [ ] RevenueCat SDK
 - [ ] Paywall screen
 - [ ] Premium gating
-- [ ] Verify: subscription flow works
+- [ ] **Tests: paywall renders, premium gate works with mock**
+- [ ] Verify: build + bundle + tests pass
 
 **M5: Polish**
 - [ ] Onboarding flow

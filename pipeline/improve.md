@@ -130,17 +130,25 @@ Execute in this order:
 - `README.md` — update feature list
 - `privacy_policy.md` — update if data handling changed
 
-### Step 6: Verify
+### Step 6: Verify (follow `pipeline/qa.md` levels)
 
-1. `npx tsc --noEmit` — no TypeScript errors (with Typed Routes enabled, also catches broken route references)
-2. `npx expo install --check` — all dependencies compatible with current SDK
-3. PRD matches code — every feature in PRD exists, nothing in code that's not in PRD
-4. No dead code — no unused imports, files, dependencies, assets
-5. Artifacts in sync — marketing and docs match actual features (ASO updated separately)
-6. If routes changed — old routes have redirects or stubs
-7. If data model changed — migrations added for SQLite and/or Zustand persisted stores
-8. If UX changed — styles consistent across all affected screens, accessibility intact
-9. If UX changed + Maestro available — run smoke test on affected screens, capture screenshots for visual verification against DESIGN.md
+**Level 1 — Build (MANDATORY):**
+1. `npx tsc --noEmit` — TypeScript compiles
+2. `npx expo export` — app bundles without errors
+
+**Level 2 — Tests (MANDATORY if tests exist):**
+3. `npx jest --passWithNoTests` — existing tests still pass after changes
+
+**Level 3 — Runtime (MANDATORY):**
+4. Start app on simulator (`npx expo start --ios`), check logs for runtime errors (ERROR, TypeError, "is not a function")
+5. If errors found → fetch docs via mcpdoc, fix, re-run
+
+**Code review:**
+6. PRD matches code
+7. No dead code — no unused imports, files, dependencies, assets
+8. If routes changed — old routes have redirects or stubs
+9. If data model changed — migrations added for SQLite and/or Zustand persisted stores
+10. If UX changed — styles consistent across all affected screens, accessibility intact
 
 ### Step 7: Report
 

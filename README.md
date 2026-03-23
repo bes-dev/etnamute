@@ -37,6 +37,7 @@ Requires a dev build (`npx expo run:ios` or `npx expo run:android`), not Expo Go
 | `/headless <path-to-prd>` | Build from a pre-written PRD (autonomous) |
 | `/improve-app <change>` | Modify an existing app |
 | `/market-app <app>` | Generate ASO, research, and marketing materials |
+| `/fix-app <app>` | Run all checks, auto-fix until app passes |
 | `/build-native <app>` | Build IPA/AAB/APK locally without publishing |
 | `/release-app <app>` | Build + screenshots + submit to stores |
 

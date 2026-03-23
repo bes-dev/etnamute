@@ -14,7 +14,43 @@ Use `AskUserQuestion` for every question. Generate questions and options dynamic
 
 - Analyze user's initial idea first — skip questions already answered
 - 5-8 questions total
-- After the last question, tell the user you're starting research (in their language)
+**After the last domain question, ask three setup questions in a row (before starting any long work):**
+
+**App name** via `AskUserQuestion`:
+```
+question: "What should we call the app?"
+header: "Name"
+options:
+  - label: "<your suggested name>"
+    description: "Generated based on the app's domain and positioning"
+```
+User picks or types their own via "Other".
+
+**Stitch design** via `AskUserQuestion`:
+```
+question: "Generate UI design with Google Stitch before building?"
+header: "Design"
+options:
+  - label: "Yes, generate design"
+    description: "Stitch will create screen designs. Code will follow the design closely."
+  - label: "No, skip design"
+    description: "AI will make UI decisions during build"
+```
+
+**PRD review preference** via `AskUserQuestion`:
+```
+question: "Review PRD before building, or auto-approve?"
+header: "PRD Review"
+options:
+  - label: "Auto-approve"
+    description: "Skip PRD review — go straight from research to building"
+  - label: "Review PRD first"
+    description: "Show PRD summary for approval before building starts"
+```
+
+After these three questions — no more user interaction until build is complete (unless user chose "Review PRD first").
+
+Then tell user you're starting research (in their language).
 
 ### Step 2: Web Research (MANDATORY)
 
@@ -58,41 +94,18 @@ Every section must have a source tag:
 
 ```
 
-**After showing the summary, ask the user to choose a name via `AskUserQuestion`:**
+**If user chose Stitch design in Step 1:**
+1. Call Stitch MCP to generate screens from PRD §6
+2. Extract design tokens into `apps/<slug>/spec/DESIGN.md`
+3. If Stitch MCP fails — inform user, continue without design
 
-Generate a name that is memorable, ≤30 chars, and relevant to the app's domain. Offer it as the first option, with "Other" for custom input.
+**If user chose "Auto-approve":**
+- Show brief one-line confirmation: "PRD saved to spec/prd.md. Starting build."
+- Proceed directly to Phase 1. No review dialog.
 
-```
-question: "What should we call the app?"
-header: "Name"
-options:
-  - label: "<your suggested name>"
-    description: "Generated based on the app's domain and positioning"
-```
-
-The user can pick the suggestion or type their own via "Other". Update the PRD §1 App Name with the chosen name.
-
-**Always offer UI design generation via `AskUserQuestion`:**
-
-```
-question: "Generate UI design with Google Stitch before building?"
-header: "Design"
-options:
-  - label: "Yes, generate design"
-    description: "Stitch will create screen designs based on PRD. Saves as DESIGN.md — code will follow the design."
-  - label: "No, skip design"
-    description: "Claude will make UI decisions during build"
-```
-
-If "Yes":
-1. Call Stitch MCP tool `build_site` with screen descriptions from PRD §6
-2. Call `get_screen_image` for each screen — review visuals with user
-3. Extract design tokens (colors, spacing, typography, component styles) into `apps/<slug>/spec/DESIGN.md`
-4. This becomes the visual source of truth for code generation
-
-If Stitch MCP call fails (not authenticated, not available) — inform user and continue without design.
-
-**Then ask for PRD approval via `AskUserQuestion`:**
+**If user chose "Review PRD first":**
+- Show PRD summary (as above)
+- Ask for approval via `AskUserQuestion`:
 
 ```
 question: "PRD is ready. Start building?"

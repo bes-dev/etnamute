@@ -46,11 +46,9 @@ Requires a dev build (`npx expo run:ios` or `npx expo run:android`), not Expo Go
 /build-app habit tracker for students
 ```
 
-Interview → PRD approval → optional Stitch UI design → autonomous build with QA.
+Interview → PRD approval → optional Stitch UI design → autonomous build.
 
-If Maestro is installed: smoke tests run after each milestone, visual verification against DESIGN.md.
-
-Code only — no marketing or ASO generated at this stage.
+Every milestone verified: TypeScript compiles, app bundles, tests pass, runs on simulator without runtime errors. Code only — no marketing or ASO at this stage.
 
 ```bash
 cd apps/<app-slug> && npm install && npx expo start
@@ -62,7 +60,7 @@ cd apps/<app-slug> && npm install && npx expo start
 /improve-app add dark mode to my water tracker
 ```
 
-Repeat until satisfied. Versioning, dead code cleanup, artifact sync handled automatically.
+Repeat until satisfied. Each change verified: build + tests + runtime check on simulator. Versioning, dead code cleanup, artifact sync handled automatically.
 
 ### Market
 

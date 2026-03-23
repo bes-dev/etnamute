@@ -1,15 +1,24 @@
 ---
 name: build-app
-description: Generate a new mobile app from an idea through interactive discovery
+description: Generate a new mobile app — full pipeline or code-only if PRD already exists
 disable-model-invocation: true
 ---
 
-Build a new mobile app. Follow the full pipeline:
+Build a new mobile app.
 
-1. Read `pipeline/discovery.md` — analyze idea, run adaptive interview via AskUserQuestion
-2. Read `pipeline/spec.md` — web research + PRD generation + Stitch design (if available) + user approval
+**If `apps/<slug>/spec/prd.md` already exists** (created by `/spec-app`):
+- Skip interview and PRD generation
+- Read existing PRD
+- Go straight to planning and building
+
+**If no PRD exists:**
+1. Read `pipeline/discovery.md` — analyze idea, run adaptive interview
+2. Read `pipeline/spec.md` — web research + PRD + name + Stitch + approval preferences
+
+**Then:**
 3. Read `pipeline/plan.md` — generate implementation plan with jest setup in M1
-4. Build all milestones. After EACH milestone, write tests then enter the verify loop:
+4. If `apps/<slug>/spec/DESIGN.md` exists (from `/design-app`) — follow it for all visual decisions
+5. Build all milestones. After EACH milestone, write tests then enter the verify loop:
 
    ```
    LOOP (max 3 attempts):
@@ -18,12 +27,12 @@ Build a new mobile app. Follow the full pipeline:
      3. If exit 1 → read the error output, fix the code, go to step 1
    ```
 
-   **You MUST re-run verify.sh after EVERY fix. Do NOT assume one fix resolved everything — new errors can appear.** Continue the loop until verify.sh exits 0 or you've exhausted 3 attempts.
+   **You MUST re-run verify.sh after EVERY fix. Do NOT assume one fix resolved everything.**
 
-5. Write final verdict to `apps/<slug>/ralph/FINAL_VERDICT.md`
+6. Write final verdict to `apps/<slug>/ralph/FINAL_VERDICT.md`
 
 **verify.sh must exit 0 before declaring BUILD COMPLETE. No exceptions.**
 
 User's idea: $ARGUMENTS
 
-Start with Phase 0a — analyze the idea and ask the first question.
+If PRD exists, start building. If not, start with Phase 0a.

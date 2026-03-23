@@ -28,13 +28,14 @@ Requires a dev build (`npx expo run:ios` or `npx expo run:android`), not Expo Go
 ## Lifecycle
 
 ```
-/build-app → /improve-app (iterate) → /market-app → /release-app
+/build-app → /design-app → /improve-app (iterate) → /fix-app → /market-app → /release-app
 ```
 
 | Command | What it does |
 |---------|-------------|
 | `/build-app <idea>` | Build a new app from an idea (interactive) |
 | `/headless <path-to-prd>` | Build from a pre-written PRD (autonomous) |
+| `/design-app <app>` | Generate design system (DESIGN.md) before building |
 | `/improve-app <change>` | Modify an existing app |
 | `/market-app <app>` | Generate ASO, research, and marketing materials |
 | `/fix-app <app>` | Run all checks, auto-fix until app passes |

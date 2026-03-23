@@ -10,12 +10,20 @@ Build an app from a ready PRD. No interview, no interaction.
 2. If invalid — list errors and stop
 3. Copy PRD to `apps/<slug>/spec/prd.md`
 4. Read `pipeline/plan.md` — generate implementation plan with jest setup in M1
-5. Build all milestones. After EACH milestone run QA (`pipeline/qa.md`):
-   - Level 1: `npx tsc --noEmit` + `npx expo export`
-   - Level 2: `npx jest`
-   - Level 3: start on simulator, check for runtime errors
+5. Build all milestones. After EACH milestone run ALL QA levels:
+
+   **Level 1:** `npx tsc --noEmit && npx expo export`
+   **Level 2:** `npx jest --passWithNoTests`
+   **Level 3 (CRITICAL):**
+   ```bash
+   npx expo start --ios 2>&1 | tee /tmp/expo-runtime.log &
+   sleep 30
+   grep -iE "ERROR|TypeError|ReferenceError|is not a function|is undefined|Exception in HostFunction" /tmp/expo-runtime.log
+   ```
+   If errors → fix, re-run. Kill expo after: `kill %1`
+
 6. Write final verdict to `apps/<slug>/ralph/FINAL_VERDICT.md`
 
-Do NOT declare BUILD COMPLETE until the app runs on simulator without errors.
+**You MUST run the app on simulator and verify zero ERROR lines before declaring BUILD COMPLETE.**
 
 PRD path: $ARGUMENTS

@@ -37,21 +37,39 @@ Write and run tests for every milestone. Tests live in `__tests__/` alongside th
 **M2 (Screens):**
 - Each screen renders without crash: `render(<Screen />)` doesn't throw
 - Navigation structure is correct: expected screens exist in the layout
-- Interactive elements respond: `fireEvent.press(button)` → verify state or UI change
 
 **M3 (Features):**
-- Store logic: each Zustand store action produces correct state
-- Utility functions: pure functions with known inputs/outputs
-- Data persistence: SQLite operations (insert, query, update, delete)
-- Core user flow: create item → verify in store → verify persistence
-- **Interaction tests**: every button/toggle/input has a test that verifies it DOES something, not just exists
+- **Store tests**: each Zustand action produces correct state (`setTheme('dark')` → `getState().theme === 'dark'`)
+- **Handler tests**: for EVERY `onPress`/`onValueChange`/`onSubmit` in every screen — `fireEvent.press(getByTestId('btn'))` → verify the handler was called and state changed. Not just "button renders" but "button WORKS".
+- **Utility functions**: pure functions with known inputs/outputs
+- **Data persistence**: SQLite operations (insert, query, update, delete)
+- **Core user flow**: create item → verify in store → verify persistence
+
+**How to write handler tests:**
+```typescript
+// For every interactive element, test the EFFECT of pressing it:
+it('pressing Dark theme button updates theme to dark', () => {
+  render(<SettingsScreen />);
+  fireEvent.press(screen.getByTestId('btn-theme-dark'));
+  expect(useSettingsStore.getState().theme).toBe('dark');
+});
+
+it('pressing Save calls addMoodEntry and navigates back', () => {
+  render(<CheckInScreen />);
+  fireEvent.press(screen.getByTestId('btn-mood-happy'));
+  fireEvent.press(screen.getByTestId('btn-save'));
+  expect(mockAddMoodEntry).toHaveBeenCalledWith(
+    expect.objectContaining({ mood: 'happy' })
+  );
+});
+```
 
 **M4 (Monetization, if enabled):**
 - RevenueCat mock: paywall renders, premium gate works with mock entitlements
 
 **M5 (Polish):**
-- Onboarding flow renders all steps
-- Settings screen renders with correct defaults
+- Onboarding flow: each step renders, Next advances, final step navigates to Home
+- Settings screen: each interactive control verified with `fireEvent` → state change
 
 **Test framework:** Jest + jest-expo (installed via `npx expo install jest-expo jest`).
 

@@ -39,7 +39,7 @@ Write and run tests for every milestone. Tests live in `__tests__/` alongside th
 - Navigation structure is correct: expected screens exist in the layout
 
 **M3 (Features):**
-- **Store tests**: each Zustand action produces correct state (`setTheme('dark')` → `getState().theme === 'dark'`)
+- **Store tests**: each Zustand action produces correct state
 - **Handler tests**: for EVERY `onPress`/`onValueChange`/`onSubmit` in every screen — `fireEvent.press(getByTestId('btn'))` → verify the handler was called and state changed. Not just "button renders" but "button WORKS".
 - **Utility functions**: pure functions with known inputs/outputs
 - **Data persistence**: SQLite operations (insert, query, update, delete)

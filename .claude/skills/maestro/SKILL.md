@@ -38,8 +38,8 @@ Maestro automates mobile UI on simulators. Used for functional testing, smoke te
 ### Toggle → verify state through companion text
 ```yaml
 - tapOn:
-    id: "dark-mode-toggle"
-- assertVisible: "Dark Mode: On"
+    id: "<toggle-testID>"
+- assertVisible: "<new state text>"
 ```
 
 ### Form → verify success
@@ -62,11 +62,11 @@ Maestro automates mobile UI on simulators. Used for functional testing, smoke te
 
 ### Settings → verify across screens
 ```yaml
-- tapOn: "Settings"
-- tapOn: { id: "theme-dark" }
-- tapOn: "Home"        # Navigate away
-- tapOn: "Settings"    # Come back
-- assertVisible: "Theme: Dark"   # Still set
+- tapOn: "<settings-tab>"
+- tapOn: { id: "<setting-control>" }
+- tapOn: "<other-tab>"     # Navigate away
+- tapOn: "<settings-tab>"  # Come back
+- assertVisible: "<expected persisted state>"
 ```
 
 ### Delete → verify removed

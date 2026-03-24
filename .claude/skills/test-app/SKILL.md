@@ -10,30 +10,26 @@ Test an app like a real QA engineer. Requires Maestro + simulator + dev build.
 
 For EVERY interactive element (`onPress`, `onValueChange`, `onSubmit` in the codebase):
 
-1. **Determine what a USER expects** from the element's label, type, and context — NOT from reading the handler code. A button labeled "Dark" in a "Theme" section → user expects the app to turn dark. A toggle labeled "Notifications" → user expects notifications to enable/disable.
+1. **Determine what a USER expects** from the element's label, type, and context — NOT from reading the handler code. Infer the expected behavior from what the control promises visually.
 
 2. Read the handler code and trace the effect chain: handler → state change → re-render → UI change
 
-3. **Compare user expectation vs actual effect.** If the UI promises something the code doesn't deliver — that's a bug, not a "design gap". Examples:
-   - Theme selector with "Dark" option but app stays light → **BUG** (UI promises dark mode)
-   - "Save" button that calls addEntry() but shows no confirmation → **BUG** (user expects feedback)
-   - "Send Feedback" button with no handler → **BUG** (button exists but does nothing)
-   - Analytics toggle that saves preference but has no visual indicator → **OK** (toggle itself shows on/off state)
+3. **Compare user expectation vs actual effect.** If the UI promises something the code doesn't deliver — that's a bug, not a "design gap". The rule: if a control's label implies a visible result, that result must happen. If a control stores a preference but the UI doesn't reflect it — bug.
 
 4. Classify the effect type:
 
 | Type | Example | How to test |
 |------|---------|-------------|
 | **Visual on current screen** | "Save" → success message appears | Maestro: tap → `assertVisible` new content |
-| **Visual on another screen** | "Set Dark theme" → all screens change background | Maestro: tap → navigate to each affected screen → `takeScreenshot` → Claude reads screenshot and verifies visual change |
+| **Visual on another screen** | Setting that affects other screens' appearance | Maestro: tap → navigate to each affected screen → `takeScreenshot` → Claude reads screenshot and verifies visual change |
 | **Navigation** | "View Details" → detail screen opens | Maestro: tap → `assertVisible` destination + `assertNotVisible` source |
 | **State without immediate visual** | Store update, preference save | Unit test: `fireEvent.press` → `expect(store.field).toBe(value)` |
 | **Side effect without visual** | Analytics event, prefetch, log | Unit test: `expect(mockFn).toHaveBeenCalled()` |
-| **Broken promise** | UI shows control but effect not implemented | **Report as BUG**. Do NOT mark as PASS. |
+| **Broken promise** | Control's label implies an effect that doesn't happen | **Report as BUG**. Do NOT mark as PASS. |
 
 5. For state/visual effects that span multiple screens — list ALL screens that depend on the changed state
 
-**CRITICAL RULE: "stores preference but has no visible effect" is a BUG if the user would expect a visible effect from the control's label and context. Theme selector that doesn't change theme, language selector that doesn't change language, font size slider that doesn't change font size — all bugs. Do NOT classify these as "design gaps" or "not implemented yet".**
+**CRITICAL RULE: "stores preference but has no visible effect" is a BUG if the user would expect a visible effect from the control's label and context. Do NOT classify unimplemented functionality as "design gaps" or "not implemented yet" — if the UI shows the control, the feature must work.**
 
 **Step 2: Generate tests**
 
@@ -56,7 +52,7 @@ Also write unit tests for "visual on current screen" elements as backup — `fir
 - Every `tapOn` must be followed by an assertion or screenshot for Claude review
 - `takeScreenshot` alone is NOT verification for current-screen effects — use `assertVisible`
 - `takeScreenshot` IS appropriate for cross-screen visual effects — Claude reads the image in Step 4
-- For settings that affect OTHER screens: tap setting → navigate to affected screen → `takeScreenshot` with descriptive name like `after-dark-theme-home.png`
+- For settings that affect OTHER screens: tap setting → navigate to each affected screen → `takeScreenshot` with descriptive name
 
 *Persistence flows* (tags: persistence):
 - Add data → `killApp` → `launchApp` (without clearState) → verify data survived
@@ -87,7 +83,7 @@ For each screenshot:
    - **DESIGN.md** if exists (colors, spacing, typography)
    - **Reference screenshots** if exist (`spec/design-screens/`)
    - **UI checklist** (`.claude/rules/ui-review.md`)
-3. If the screenshot shows the WRONG state (e.g., light background after selecting Dark theme) — this is a bug. Report and fix.
+3. If the screenshot shows the WRONG state for what was expected — this is a bug. Report and fix.
 
 **This is the step that catches "state changed but UI didn't update" bugs that Maestro assertions cannot detect.**
 

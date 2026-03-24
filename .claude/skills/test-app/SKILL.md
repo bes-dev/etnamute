@@ -27,23 +27,15 @@ For EVERY interactive element (buttons, toggles, inputs, selectors):
 
 **Common mistake to AVOID:** tap → takeScreenshot → move on. This proves nothing. The test passes even if the button is broken.
 
-**Settings/theme test template:**
-```yaml
-# WRONG (what agents do):
-- tapOn: { id: "btn-theme-dark" }
-- takeScreenshot: "dark-selected"     # Proves nothing!
+**For every interactive element, ask: "what should visibly change after I tap this?"** Then write an assertion for that change. If nothing visibly changes — the feature is broken and the test should fail.
 
-# RIGHT:
-- tapOn: { id: "btn-theme-dark" }
-- assertWithAI:
-    assertion: "The screen background appears dark/black, not light/white"
-    optional: false
-# OR if no assertWithAI:
-- assertVisible: "Theme: Dark"        # Verify UI reflects the change
-- tapOn: "Home"                        # Navigate away
-- tapOn: "Settings"                    # Come back
-- assertVisible: "Theme: Dark"        # Verify persisted
-```
+**For settings/preferences that persist:**
+1. Tap the control
+2. Assert the new state is reflected in UI (text, visual indicator, or `assertWithAI`)
+3. Navigate to a different screen
+4. Come back
+5. Assert the same state is still shown (persistence)
+6. If the setting affects OTHER screens (e.g., visual theme) — navigate there and assert the effect is visible
 
 **Persistence flows** (tags: persistence):
 - Add data → `killApp` → `launchApp` (without clearState) → verify data survived

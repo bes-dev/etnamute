@@ -37,6 +37,19 @@ options:
     description: "AI will make UI decisions during build"
 ```
 
+**Testing level** via `AskUserQuestion`:
+```
+question: "Testing level?"
+header: "QA"
+options:
+  - label: "Fast"
+    description: "Build check + runtime only. You test the app manually."
+  - label: "Standard (Recommended)"
+    description: "Build check + unit tests for every handler"
+  - label: "Full"
+    description: "Standard + Maestro UI tests + visual review. Requires simulator + Maestro."
+```
+
 **PRD review preference** via `AskUserQuestion`:
 ```
 question: "Review PRD before building, or auto-approve?"
@@ -48,7 +61,9 @@ options:
     description: "Show PRD summary for approval before building starts"
 ```
 
-After these three questions — no more user interaction until build is complete (unless user chose "Review PRD first").
+After these questions — no more user interaction until build is complete (unless user chose "Review PRD first").
+
+Save the testing level choice — it determines QA behavior during build (see `pipeline/build.md`).
 
 Then tell user you're starting research (in their language).
 

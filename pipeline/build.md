@@ -12,37 +12,51 @@ Requires: `apps/<slug>/spec/prd.md` must exist.
 
 Read `pipeline/plan.md` — generate 9-section implementation plan.
 
-- Jest + testing library setup in M1
+- If testing level is Standard or Full: include Jest + testing library setup in M1
 - If `apps/<slug>/spec/DESIGN.md` exists — follow it for all visual decisions
 - Save to `apps/<slug>/spec/plan.md`
 
 ### 2. Build milestones
 
-5 milestones sequentially. After EACH milestone, write tests then verify:
+5 milestones sequentially. After EACH milestone, verify based on testing level:
 
+**Fast:**
 ```
-LOOP (max 3 attempts per milestone):
+LOOP (max 3 attempts):
+  1. npx tsc --noEmit && npx expo export
+  2. Start on simulator, check runtime log for errors (45s wait)
+  3. If errors → fix → go to 1
+```
+No jest, no unit tests. User tests manually.
+
+**Standard:**
+```
+LOOP (max 3 attempts):
   1. Run: ../../scripts/verify.sh .
-  2. If exit 0 → PASS, move to next milestone
-  3. If exit 1 → read the error output, fix the code, go to step 1
+     (tsc + bundle + jest + runtime on simulator)
+  2. If exit 0 → PASS
+  3. If exit 1 → fix → go to 1
 ```
+Write unit tests for every handler alongside the code.
 
-**Re-run verify.sh after EVERY fix. Do NOT assume one fix resolved everything.**
-**verify.sh checks: TypeScript + bundle + tests + runtime on simulator.**
+**Full:**
+Same as Standard, plus after final milestone (M5):
+1. Generate `.maestro/` flows (smoke + functional + persistence)
+2. Run Maestro tests
+3. Capture screenshots → read and verify visually
+4. Fix any bugs found → re-run
+(This is equivalent to running `/test-app` inline.)
 
 ### 3. Final verdict
 
-Write to `apps/<slug>/ralph/FINAL_VERDICT.md`.
+Write to `apps/<slug>/ralph/FINAL_VERDICT.md`. Include testing level used.
 
-**verify.sh must exit 0 before declaring BUILD COMPLETE. No exceptions.**
+**verify.sh must exit 0 (Standard/Full) or tsc+bundle+runtime must pass (Fast) before BUILD COMPLETE.**
 
 ### 4. Recommend next steps
 
-After BUILD COMPLETE, tell the user:
+After BUILD COMPLETE:
 
-```
-Next steps:
-- /test-app <slug>     — UI testing: smoke, functional, visual review (finds broken buttons, unimplemented features, visual bugs)
-- /market-app <slug>   — ASO + marketing materials
-- /release-app <slug>  — build + submit to stores
-```
+**If Fast:** recommend `/test-app <slug>` for thorough testing before release.
+**If Standard:** recommend `/test-app <slug>` for UI verification.
+**If Full:** testing already done — recommend `/market-app <slug>` and `/release-app <slug>`.

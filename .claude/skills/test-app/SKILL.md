@@ -6,9 +6,19 @@ disable-model-invocation: true
 
 Test an app like a real QA engineer. Requires Maestro + simulator + dev build.
 
-**Step 1: Generate .maestro/ flows**
+**Step 1: Build interaction map (BEFORE writing any flows)**
 
-Read PRD, DESIGN.md (if exists), and actual code in `app/` + `src/`. Generate three types of flows:
+For every interactive element in the codebase (every `onPress`, `onValueChange`, `onSubmit`):
+1. Read the handler code — what function does it call?
+2. Trace the effect — does it update state? navigate? call API?
+3. Determine what VISIBLY changes in UI — trace state → re-render → what appears/disappears/changes?
+4. Decide how Maestro can verify that visible change
+
+If a handler changes state but nothing visibly changes in UI — that's a **bug in the app**. Write a test that will FAIL on it.
+
+**Step 2: Generate .maestro/ flows**
+
+Using the interaction map, generate flows. Every flow must test EFFECTS, not just EXISTENCE:
 
 **Smoke flows** (tags: smoke):
 - Launch → crash detection → navigate all tabs → screenshot each

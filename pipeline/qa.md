@@ -46,23 +46,29 @@ Write and run tests for every milestone. Tests live in `__tests__/` alongside th
 - **Core user flow**: create item → verify in store → verify persistence
 
 **How to write handler tests:**
+
+For each interactive element: read what the `onPress`/`onValueChange` handler does, then verify that effect.
+
 ```typescript
-// For every interactive element, test the EFFECT of pressing it:
-it('pressing Dark theme button updates theme to dark', () => {
-  render(<SettingsScreen />);
-  fireEvent.press(screen.getByTestId('btn-theme-dark'));
-  expect(useSettingsStore.getState().theme).toBe('dark');
+// Pattern: tap button → verify store updated
+it('pressing <button> updates <store field>', () => {
+  render(<Screen />);
+  fireEvent.press(screen.getByTestId('<button-testID>'));
+  expect(useStore.getState().<field>).toBe(<expected value>);
 });
 
-it('pressing Save calls addMoodEntry and navigates back', () => {
-  render(<CheckInScreen />);
-  fireEvent.press(screen.getByTestId('btn-mood-happy'));
-  fireEvent.press(screen.getByTestId('btn-save'));
-  expect(mockAddMoodEntry).toHaveBeenCalledWith(
-    expect.objectContaining({ mood: 'happy' })
+// Pattern: tap button → verify mock function called with correct args
+it('pressing <button> calls <function> with correct data', () => {
+  render(<Screen />);
+  fireEvent.press(screen.getByTestId('<trigger-testID>'));
+  fireEvent.press(screen.getByTestId('<submit-testID>'));
+  expect(mockFunction).toHaveBeenCalledWith(
+    expect.objectContaining({ <key>: <value> })
   );
 });
 ```
+
+The test must verify the EFFECT of the press — state change, function call, or navigation. `render()` without `fireEvent` only tests that the screen doesn't crash, not that buttons work.
 
 **M4 (Monetization, if enabled):**
 - RevenueCat mock: paywall renders, premium gate works with mock entitlements

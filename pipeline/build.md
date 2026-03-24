@@ -35,3 +35,14 @@ LOOP (max 3 attempts per milestone):
 Write to `apps/<slug>/ralph/FINAL_VERDICT.md`.
 
 **verify.sh must exit 0 before declaring BUILD COMPLETE. No exceptions.**
+
+### 4. Recommend next steps
+
+After BUILD COMPLETE, tell the user:
+
+```
+Next steps:
+- /test-app <slug>     — UI testing: smoke, functional, visual review (finds broken buttons, unimplemented features, visual bugs)
+- /market-app <slug>   — ASO + marketing materials
+- /release-app <slug>  — build + submit to stores
+```

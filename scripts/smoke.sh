@@ -55,10 +55,14 @@ if [ ! -d "ios" ]; then
   npx expo prebuild --platform ios --clean 2>&1 | tail -3
 fi
 
-# Boot a simulator if none booted
+# Kill Simulator.app to prevent GUI windows
+osascript -e 'quit app "Simulator"' 2>/dev/null || true
+sleep 1
+
+# Boot simulator headless (no GUI window)
 BOOTED=$(xcrun simctl list devices booted | grep -c "Booted" || true)
 if [ "$BOOTED" -eq 0 ]; then
-  echo "Booting simulator..."
+  echo "Booting simulator (headless)..."
   DEVICE_ID=$(xcrun simctl list devices available | grep "iPhone" | head -1 | grep -oE '[A-F0-9-]{36}')
   xcrun simctl boot "$DEVICE_ID" 2>/dev/null || true
   sleep 5
@@ -81,8 +85,8 @@ for i in $(seq 1 120); do
   sleep 2
 done
 
-# Start Metro separately in background
-npx expo start --no-dev > /tmp/etnamute-smoke-metro.log 2>&1 &
+# Start Metro separately in background (no dev tools)
+REACT_NATIVE_DEVTOOLS_PORT=0 npx expo start --no-dev > /tmp/etnamute-smoke-metro.log 2>&1 &
 METRO_PID=$!
 sleep 10
 
@@ -104,6 +108,8 @@ echo "$MAESTRO_OUTPUT"
 kill $METRO_PID 2>/dev/null || true
 kill $BUILD_PID 2>/dev/null || true
 lsof -ti:8081 2>/dev/null | xargs kill -9 2>/dev/null || true
+# Shutdown simulator
+xcrun simctl shutdown all 2>/dev/null || true
 
 echo ""
 echo "=== Summary ==="

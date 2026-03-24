@@ -85,8 +85,16 @@ echo "--- Level 3: Runtime ---"
 RUNTIME_LOG="/tmp/etnamute-runtime-$(basename $APP_DIR).log"
 rm -f "$RUNTIME_LOG"
 
-echo "Starting app on simulator..."
-npx expo start --ios > "$RUNTIME_LOG" 2>&1 &
+# Kill Simulator.app if running (prevents GUI windows from popping up)
+osascript -e 'quit app "Simulator"' 2>/dev/null || true
+sleep 1
+
+# Boot simulator headless (no GUI window)
+DEVICE_ID=$(xcrun simctl list devices available | grep "iPhone" | head -1 | grep -oE '[A-F0-9-]{36}')
+xcrun simctl boot "$DEVICE_ID" 2>/dev/null || true
+
+echo "Starting app on simulator (headless)..."
+REACT_NATIVE_DEVTOOLS_PORT=0 npx expo start --ios --no-dev > "$RUNTIME_LOG" 2>&1 &
 EXPO_PID=$!
 
 echo "Waiting 45 seconds for runtime errors..."

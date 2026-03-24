@@ -33,17 +33,16 @@ Requires a dev build (`npx expo run:ios` or `npx expo run:android`), not Expo Go
 
 | Command | What it does |
 |---------|-------------|
-| `/spec-app <idea>` | Generate PRD through interview + research (no code) |
-| `/design-app <app>` | Generate design system (DESIGN.md) from PRD |
-| `/build-app <idea or app>` | Build app — full pipeline, or code-only if PRD exists |
-| `/headless <path-to-prd>` | Build from a pre-written PRD (autonomous) |
-| `/design-app <app>` | Generate design system (DESIGN.md) before building |
-| `/improve-app <change>` | Modify an existing app |
-| `/market-app <app>` | Generate ASO, research, and marketing materials |
-| `/fix-app <app>` | Run all checks, auto-fix until app passes |
-| `/test-app <app>` | Generate and run Maestro UI smoke tests |
+| `/spec-app <idea>` | Discovery interview + web research → PRD (no code) |
+| `/design-app <app>` | Generate design system (DESIGN.md + reference screenshots) from PRD |
+| `/build-app <idea or app>` | Full pipeline: interview → PRD → plan → build → QA. Skips to build if PRD exists |
+| `/headless <path-to-prd>` | Build from a pre-written PRD without interview (for agents/CI) |
+| `/improve-app <change>` | Modify an existing app: PRD update → code → tests → verify |
+| `/fix-app <app>` | Run verify.sh in a loop, auto-fix until all checks pass |
+| `/test-app <app>` | Interaction map → Maestro UI tests → visual verification via Claude vision |
+| `/market-app <app>` | Platform-specific ASO + market research + marketing content |
 | `/build-native <app>` | Build IPA/AAB/APK locally without publishing |
-| `/release-app <app>` | Build + screenshots + submit to stores |
+| `/release-app <app>` | Fastlane: build → sign → screenshots → submit to stores |
 
 ### Build
 
@@ -51,13 +50,24 @@ Requires a dev build (`npx expo run:ios` or `npx expo run:android`), not Expo Go
 /build-app habit tracker for students
 ```
 
-Interview → PRD approval → optional Stitch UI design → autonomous build.
+Interview → PRD → optional Stitch UI design → autonomous build with 3 testing levels:
+- **Fast** — build + runtime check, you test manually
+- **Standard** — build + unit tests + runtime (recommended)
+- **Full** — Standard + Maestro UI tests + visual verification
 
-Every milestone verified: TypeScript compiles, app bundles, tests pass, runs on simulator without runtime errors. Code only — no marketing or ASO at this stage.
+Every milestone verified before proceeding. Code only — marketing generated separately via `/market-app`.
 
 ```bash
 cd apps/<app-slug> && npm install && npx expo start
 ```
+
+### Design
+
+```
+/design-app my-app
+```
+
+If Stitch MCP is available: generates screen mockups, saves reference screenshots to `spec/design-screens/`, extracts design tokens into `DESIGN.md`. Without Stitch: generates design system from PRD. `/build-app` follows DESIGN.md; `/test-app` compares actual UI against reference screenshots.
 
 ### Iterate
 
@@ -65,57 +75,80 @@ cd apps/<app-slug> && npm install && npx expo start
 /improve-app add dark mode to my water tracker
 ```
 
-Repeat until satisfied. Each change verified: build + tests + runtime check on simulator. Versioning, dead code cleanup, artifact sync handled automatically.
+Each change: PRD update → code → tests → verify.sh loop. Versioning, dead code cleanup, artifact sync handled automatically.
+
+### Test
+
+```
+/test-app my-app
+```
+
+Builds an interaction map of every UI element, generates Maestro flows + unit tests, runs them, then Claude reads screenshots to verify visual correctness against DESIGN.md and reference mockups.
 
 ### Market
 
 ```
-/market-app water-tracker
+/market-app my-app
 ```
 
-Platform-specific ASO (iOS keywords + Android description optimization), market research, competitor analysis, launch thread, landing copy, press blurb. Run after code is finalized.
+Platform-specific ASO (iOS hidden keywords vs Android description density), competitor analysis, launch content. Run after code is finalized.
 
 ### Release
 
 ```
-/release-app water-tracker
+/release-app my-app
 ```
 
-Prebuild → Maestro screenshots → fastlane build → sign → submit for review. Fully automated after one-time setup.
+Prebuild → Maestro screenshots → fastlane build → sign → submit for review. One-time setup required (certs, API keys).
 
-### Headless (for other AI agents)
+### Headless (for agents/CI)
 
 ```
 /headless path/to/my-prd.md
 ```
 
-No interview. PRD in, app out.
+Validates PRD against schema, then builds autonomously. No interview, no user interaction.
 
 ---
+
+## Architecture
+
+```
+├── CLAUDE.md                 # System constitution
+├── .claude/
+│   ├── skills/               # Slash commands (source of truth for each pipeline stage)
+│   ├── rules/                # Build standards, design consistency, ASO quality
+│   └── hooks/                # Post-edit syntax checks
+├── pipeline/                 # Shared references
+│   ├── qa.md                 # QA procedure (used by multiple skills)
+│   ├── plan.md               # Implementation plan template
+│   └── prd-schema.md         # PRD format specification
+├── scripts/
+│   ├── verify.sh             # 3-level QA: tsc + bundle + jest + runtime
+│   ├── smoke.sh              # Maestro test runner with simulator lifecycle
+│   ├── greenlight.sh         # App Store compliance check
+│   └── clean.sh              # Cleanup utility
+├── .mcp.json                 # MCP servers (mcpdoc + Stitch)
+└── apps/                     # Generated apps
+    └── <slug>/
+        ├── spec/             # PRD, research, plan, DESIGN.md, design-screens/
+        ├── ralph/            # QA verdicts
+        ├── app/, src/        # Expo app code
+        ├── __tests__/        # Jest tests
+        ├── .maestro/         # Maestro UI test flows
+        ├── research/, aso/, marketing/  # Generated by /market-app
+        └── fastlane/         # Generated by /release-app
+```
 
 ## Integrations
 
 | Tool | Purpose | Setup |
 |------|---------|-------|
-| [mcpdoc](https://github.com/langchain-ai/mcpdoc) | Live Expo + RevenueCat docs | `pip install mcpdoc` (via setup.sh) |
-| [Google Stitch](https://stitch.withgoogle.com) | AI UI design generation | `export STITCH_API_KEY=<key>` |
-| [Maestro](https://maestro.mobile.dev) | Smoke tests, visual verification, screenshots | `curl -fsSL "https://get.maestro.mobile.dev" \| bash` |
-| [fastlane](https://fastlane.tools) | Build + sign + submit to stores | `brew install fastlane` |
+| [mcpdoc](https://github.com/langchain-ai/mcpdoc) | Live Expo + RevenueCat + Maestro docs | `pip install mcpdoc` (via setup.sh) |
+| [Google Stitch](https://stitch.withgoogle.com) | AI UI design → reference screenshots + design tokens | `export STITCH_API_KEY=<key>` |
+| [Maestro](https://maestro.mobile.dev) | Smoke tests, functional tests, visual verification, screenshots | `curl -fsSL "https://get.maestro.mobile.dev" \| bash` |
+| [fastlane](https://fastlane.tools) | Build + sign + submit to App Store / Google Play | `brew install fastlane` |
 
----
+## Stack
 
-## Project Structure
-
-```
-├── CLAUDE.md                 # Pipeline constitution
-├── .claude/
-│   ├── skills/               # Code quality rules + slash commands
-│   ├── rules/                # Build standards (auto-discovered)
-│   └── hooks/                # Post-edit TypeScript checks
-├── pipeline/                 # Phase instructions
-├── scripts/                  # Utilities
-├── .mcp.json                 # MCP servers (mcpdoc + Stitch)
-└── apps/                     # Generated apps
-```
-
-Generates **Expo React Native** apps with TypeScript, NativeWind, Zustand, expo-sqlite, and optional RevenueCat monetization. SDK versions are resolved at build time from the latest stable Expo release.
+Expo (latest stable SDK), Expo Router, TypeScript, NativeWind, Zustand, expo-sqlite, React Native Reanimated. Optional RevenueCat monetization. SDK versions resolved at build time — never hardcoded.

@@ -30,32 +30,32 @@ Monetization is **user's choice** — decided during the discovery interview. Fr
 ```
 USER: describes app idea
   ↓
-PHASE 0: Discovery (INTERACTIVE)
-  0a: Adaptive interview (5-8 questions via AskUserQuestion)     → pipeline/discovery.md
-  0b: Web research (competitors, pricing, market)                → apps/<slug>/spec/research.md
-  0c: PRD generation → user approves                             → apps/<slug>/spec/prd.md
+PHASE 0: Discovery (INTERACTIVE)                                → /spec-app
+  0a: Adaptive interview (5-8 questions via AskUserQuestion)
+  0b: Web research (competitors, pricing, market)
+  0c: PRD generation → user approves
   ↓
-PHASE 1: Plan (AUTONOMOUS)                                       → pipeline/plan.md
-  9-section implementation plan                                  → apps/<slug>/spec/plan.md
+PHASE 1: Plan (AUTONOMOUS)                                       → /build-app
+  9-section implementation plan (template: pipeline/plan.md)
   ↓
-PHASE 2: Build (AUTONOMOUS, milestone-driven)
+PHASE 2: Build (AUTONOMOUS, milestone-driven)                    → /build-app
   M1: Scaffold → M2: Screens → M3: Features
-  M4: Monetization (skip if free) → M5: Polish + Research/Marketing
-  Ralph QA after each milestone (≥97% required)                  → pipeline/qa.md
+  M4: Monetization (skip if free) → M5: Polish
+  QA after each milestone (pipeline/qa.md)
   ↓
 PHASE 3: Finalization
-  Final Ralph QA → FINAL_VERDICT.md                              → apps/<slug>/ralph/
+  Final QA → FINAL_VERDICT.md
   ↓
 BUILD COMPLETE
   ↓ (user iterates with /improve-app until satisfied)
   ↓
-/market-app → ASO + research + marketing materials                → pipeline/market.md
+/market-app → ASO + research + marketing materials
   ↓
-/release-app → build + screenshots + submit to stores             → pipeline/release.md
+/release-app → build + screenshots + submit to stores
 ```
 
-**Improve Mode**: user requests changes to an existing app → `pipeline/improve.md`
-**Headless Mode**: build from a pre-written PRD without interview → `pipeline/headless.md`
+**Improve Mode**: user requests changes to an existing app → `/improve-app`
+**Headless Mode**: build from a pre-written PRD without interview → `/headless`
 
 ---
 
@@ -68,15 +68,10 @@ etnamute/
 │   ├── skills/                      # Slash commands + code quality skills
 │   ├── rules/                       # Auto-discovered build standards
 │   └── hooks/                       # Post-edit checks
-├── pipeline/                        # Phase instructions
-│   ├── discovery.md                 # Adaptive interview
-│   ├── spec.md                      # PRD generation
-│   ├── prd-schema.md                # PRD format specification
-│   ├── headless.md                  # Build from pre-written PRD
-│   ├── plan.md                      # Implementation plan
-│   ├── qa.md                        # Ralph QA
-│   ├── release.md                   # Build + deploy
-│   └── improve.md                   # Modify existing app
+├── pipeline/                        # Shared references (skills are the primary source of truth)
+│   ├── qa.md                        # QA procedure (shared by multiple skills)
+│   ├── plan.md                      # Plan template (shared by /build-app and /headless)
+│   └── prd-schema.md                # PRD format specification
 ├── scripts/
 │   ├── generate-assets.mjs
 │   ├── greenlight.sh
@@ -130,57 +125,29 @@ Improve ──[changes + verify]──▶ Done ──[more changes]──▶ Imp
 
 ## PHASE DETAILS
 
-### Phase 0: Discovery (INTERACTIVE)
+### Phase 0: Discovery → `/spec-app`
 
-**Template**: `pipeline/discovery.md` + `pipeline/spec.md`
+Interview → research → PRD generation → user approval.
 
-1. **Analyze** user's initial idea — extract what's already known
-2. **Interview** — 5-8 adaptive questions via `AskUserQuestion`, domain-specific options
-3. **Research** — WebSearch for competitors, pricing, market demand → `spec/research.md`
-4. **Generate PRD** — 12-section spec with source attribution (`[USER]`, `[RESEARCH]`, `[DEFAULT]`, `[INFERRED]`)
-5. **User approves** — show summary, wait for explicit approval. No building until approved.
+### Phase 1-2: Plan + Build → `/build-app`
 
-### Phase 1: Plan (AUTONOMOUS)
+Plan (9 sections via `pipeline/plan.md`) → 5 milestones → QA after each (`pipeline/qa.md`).
 
-**Template**: `pipeline/plan.md`
-**Output**: `apps/<slug>/spec/plan.md`
-
-9 required sections:
-1. Project Overview
-2. Core User Loop
-3. Tech Stack (committed choices)
-4. Project Structure (exact file tree)
-5. Key Systems (navigation, data, UI)
-6. Monetization Flow (or "none" for free apps)
-7. Milestones (numbered, with verification checklists)
-8. Verification Strategy
-9. Risks & Mitigations
-
-### Phase 2: Build (AUTONOMOUS)
-
-| Milestone | Deliverables | Tests | QA |
-|-----------|-------------|-------|-----|
-| M1: Scaffold | versions, package.json, NativeWind, jest setup | — | build + bundle |
-| M2: Screens | navigation, core UI | screen render tests | build + bundle + tests |
-| M3: Features | core functionality, data | store + util + persistence tests | build + bundle + tests + smoke |
-| M4: Monetization | RevenueCat, paywall — **skip if free** | paywall mock tests | build + bundle + tests |
-| M5: Polish | onboarding, assets, docs | onboarding + settings tests | build + bundle + tests + smoke |
-
-After each milestone: implement → write tests → run QA pipeline (build + tests + runtime) → proceed only if ALL pass.
+| Milestone | Deliverables | Tests |
+|-----------|-------------|-------|
+| M1: Scaffold | versions, package.json, NativeWind, jest setup | — |
+| M2: Screens | navigation, core UI | screen render tests |
+| M3: Features | core functionality, data | store + util + persistence tests |
+| M4: Monetization | RevenueCat, paywall — **skip if free** | paywall mock tests |
+| M5: Polish | onboarding, assets, docs | onboarding + settings tests |
 
 ### Phase 3: Finalization
 
-Final Ralph QA across entire app → `apps/<slug>/ralph/FINAL_VERDICT.md` → BUILD COMPLETE.
+Final QA → `apps/<slug>/ralph/FINAL_VERDICT.md` → BUILD COMPLETE.
 
-### Phase 4: Release (OPTIONAL, on user request)
+### Phase 4: Release → `/release-app`
 
-**Template**: `pipeline/release.md`
-
-1. Pre-flight checks (`.env.deploy`, tools installed)
-2. Generate fastlane config + metadata from `aso/`
-3. Generate Maestro screenshot flows from PRD key screens
-4. `npx expo prebuild --clean` → `maestro test` → `fastlane build`
-5. Ask user confirmation before submitting to stores
+Pre-flight → fastlane config → screenshots → build → submit.
 
 ---
 

@@ -15,13 +15,35 @@ Read PRD, DESIGN.md (if exists), and actual code in `app/` + `src/`. Generate th
 
 **Functional flows** (tags: functional):
 For EVERY interactive element (buttons, toggles, inputs, selectors):
-- **Core rule: every `tapOn` must be followed by an assertion proving something changed**
-- Buttons: tap → verify UI updated (not just "button exists")
-- Toggles: tap → verify companion text or visual state changed
-- Forms: fill → submit → verify success state or navigation
-- Selections: tap option → verify selected state + downstream effect
-- Settings: change → navigate away → come back → verify persisted
-- Delete: add item → delete → verify gone → verify empty state returns
+
+**ABSOLUTE RULE: every `tapOn` must be followed by an assertion proving something VISIBLY changed. A `takeScreenshot` is NOT an assertion. If you cannot write an assertVisible/assertNotVisible after a tap, the test is useless.**
+
+- Buttons: tap → `assertVisible` new content or `assertNotVisible` old content
+- Toggles: tap → `assertVisible` new state text (e.g., "Dark Mode: On") or `assertWithAI` checking visual change
+- Forms: fill → submit → `assertVisible` success message or `assertNotVisible` form screen
+- Selections: tap option → `assertVisible` selected indicator or verify downstream content changed
+- Settings that affect visuals: change → `assertWithAI "background is now dark"` or verify text/color token changed. Then navigate away → come back → SAME assertion must still pass (persistence check)
+- Delete: add → delete → `assertNotVisible` deleted item → `assertVisible` empty state
+
+**Common mistake to AVOID:** tap → takeScreenshot → move on. This proves nothing. The test passes even if the button is broken.
+
+**Settings/theme test template:**
+```yaml
+# WRONG (what agents do):
+- tapOn: { id: "btn-theme-dark" }
+- takeScreenshot: "dark-selected"     # Proves nothing!
+
+# RIGHT:
+- tapOn: { id: "btn-theme-dark" }
+- assertWithAI:
+    assertion: "The screen background appears dark/black, not light/white"
+    optional: false
+# OR if no assertWithAI:
+- assertVisible: "Theme: Dark"        # Verify UI reflects the change
+- tapOn: "Home"                        # Navigate away
+- tapOn: "Settings"                    # Come back
+- assertVisible: "Theme: Dark"        # Verify persisted
+```
 
 **Persistence flows** (tags: persistence):
 - Add data → `killApp` → `launchApp` (without clearState) → verify data survived

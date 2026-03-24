@@ -12,17 +12,20 @@ Maestro automates mobile UI on simulators. Used for functional testing, smoke te
 
 ## Core Principle
 
-**Every `tapOn` must be followed by an assertion proving something changed.** Never just assert an element exists — verify the interaction had an effect.
+**Every `tapOn` must be followed by an assertion proving something VISIBLY changed.**
 
 ```yaml
-# BAD: only checks button exists
-- assertVisible: "Save"
+# BAD — proves nothing:
+- tapOn: "Save"
+- takeScreenshot: "after-save"    # Screenshot is NOT verification!
 
-# GOOD: tap and verify consequence
+# GOOD — proves the tap worked:
 - tapOn: "Save"
 - assertVisible: "Saved successfully"
 - assertNotVisible: "Unsaved changes"
 ```
+
+**`takeScreenshot` is documentation, NOT verification.** A test that only takes screenshots after taps will PASS even if every button is broken. Always pair with `assertVisible`/`assertNotVisible`/`assertWithAI`.
 
 ## Functional Testing Patterns
 

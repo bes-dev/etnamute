@@ -8,14 +8,9 @@ Test an app: smoke tests + visual UI review. Requires Maestro + simulator.
 
 **Step 1: Generate .maestro/ flows**
 
-Read PRD §6 (Key Screens) and actual code in `app/` — extract testIDs, screen names, navigation.
+Read PRD §6 and actual code — extract testIDs, screen names, navigation.
 
-Generate `apps/<slug>/.maestro/` flows:
-- Tag all flows with `smoke`
-- One smoke flow: launch → crash detection → navigate all tabs → take screenshot of each
-- Per-screen flows: navigate to screen, assert key content, take screenshot
-- Every flow must `takeScreenshot` of each screen it visits
-- See `.claude/skills/maestro/SKILL.md` for Expo Router gotchas
+Generate flows that `takeScreenshot` of every screen. See `.claude/skills/maestro/SKILL.md` for gotchas.
 
 **Step 2: Run smoke tests**
 
@@ -27,33 +22,56 @@ If fails → read output, fix code, re-run. Max 3 attempts.
 
 **Step 3: Visual UI Review**
 
-After smoke tests pass, review the captured screenshots:
+After smoke tests pass, review captured screenshots:
 
-1. Read each screenshot from `apps/<slug>/screenshots/` via Read tool
-2. For each screenshot, evaluate against:
-   - **PRD §6** — does the screen match the described layout and content?
-   - **DESIGN.md** (if exists) — do colors, spacing, typography match the design system?
-   - **`.claude/rules/design-consistency.md`** — one focus per screen, no card grids, proper hierarchy, animation budget
-3. Report findings per screen:
+1. Read each screenshot from `apps/<slug>/screenshots/`
+
+2. **If reference screenshots exist** (`apps/<slug>/spec/design-screens/`):
+   - Read both the Maestro screenshot AND the matching reference screenshot
+   - Compare side-by-side: does the implemented screen match the Stitch design?
+   - Check: same colors, same layout structure, same component styles, same spacing proportions
+
+3. **Evaluate each screenshot against this checklist:**
+
+   **Critical (users won't download):**
+   - [ ] No placeholder/default icons (Expo ▼ triangles, missing images, broken assets)
+   - [ ] No raw/unstyled system components (default toggles, unstyled inputs)
+   - [ ] No broken layout (overlapping elements, content cut off, elements off-screen)
+   - [ ] No error screens or red boxes visible
+   - [ ] Tab bar has real icons, not placeholders
+
+   **Major (users notice):**
+   - [ ] Colors match DESIGN.md palette (not random/default colors)
+   - [ ] Typography consistent — one font, proper hierarchy (title > body > caption)
+   - [ ] Spacing even and consistent — not cramped, not excessively empty
+   - [ ] One clear primary action per screen — not competing CTAs
+   - [ ] Empty states have icon + message + CTA (not just blank space or plain text)
+   - [ ] Status bar style matches app theme (dark text on light bg, light text on dark bg)
+
+   **Minor (designers notice):**
+   - [ ] Border radius consistent across all components
+   - [ ] Shadow/elevation consistent
+   - [ ] Active/selected states visually distinct from inactive
+   - [ ] Text doesn't overflow or truncate unexpectedly
+
+4. **Report per screen:**
 
 ```
 ## UI Review: <app-name>
 
-### Home Screen (screenshots/smoke-home.png)
-- Layout: ✓ matches PRD — single focus, clear CTA
-- Design: ✓ colors match DESIGN.md palette
-- Issues: none
-
-### Settings Screen (screenshots/smoke-settings.png)
-- Layout: ✓ flat list, no unnecessary cards
-- Design: ⚠ spacing between sections too tight
-- Issues: recommend increasing section gap
+### <Screen Name> (screenshot.png vs design-screens/screen.png)
+- Reference match: ✓ close / ⚠ deviates / ✗ doesn't match
+- Critical issues: <list or "none">
+- Major issues: <list or "none">
+- Minor issues: <list or "none">
 
 ### Overall
-- Design consistency: PASS / NEEDS WORK
-- PRD compliance: PASS / NEEDS WORK
+- Critical: X issues
+- Major: X issues
+- Minor: X issues
+- Verdict: PASS / NEEDS FIXES
 ```
 
-4. If issues found → fix code, re-run smoke.sh to recapture screenshots, re-review. Max 2 iterations.
+5. If critical or major issues found → fix code, re-run smoke.sh, re-review. Max 2 iterations.
 
 App: $ARGUMENTS

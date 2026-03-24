@@ -1,14 +1,18 @@
 # Design Generation
 
-Generate a comprehensive DESIGN.md — the visual source of truth for code generation. Run after PRD, before building.
+Generate a complete design system with visual references. Run after PRD, before building.
+
+**Output:**
+- `apps/<slug>/spec/DESIGN.md` — design tokens and rules (text)
+- `apps/<slug>/spec/design-screens/` — reference screenshots of each screen (PNG)
 
 ---
 
 ## INPUT
 
-Read `apps/<slug>/spec/prd.md` — specifically:
+Read `apps/<slug>/spec/prd.md`:
 - §1 App Name, Category
-- §3 Target User (who is this for — informs visual tone)
+- §3 Target User (informs visual tone)
 - §4 Core Features (what needs to be designed)
 - §6 UX Philosophy (design principles, visual style, key screens)
 
@@ -16,28 +20,41 @@ Read `apps/<slug>/spec/prd.md` — specifically:
 
 ## EXECUTION
 
-### Step 1: Choose design direction
+### Step 1: Generate screens with Stitch (if available)
 
-Based on PRD §6 and the app's domain, define:
-- **Design philosophy** — 1-2 sentences capturing the visual mood (e.g., "Atmospheric Serenity", "Kinetic Gallery", "Living Oasis")
-- **Visual tone** — calm/energetic, minimal/rich, dark/light, warm/cool
+**If Stitch MCP is available:**
 
-If Stitch MCP is available:
-1. Call Stitch to generate screens
-2. Extract the design system from Stitch output
-3. Enhance with our rules below
+1. `create_project` — create Stitch project with app name and description from PRD
+2. Generate screens for each key screen from PRD §6 (use Stitch's text-to-UI)
+3. For each screen:
+   - `get_screen_image` → save to `apps/<slug>/spec/design-screens/<screen-name>.png`
+   - `get_screen_code` → parse HTML/CSS to extract exact design tokens
+4. Extract from CSS:
+   - Color values: every hex/rgb from the generated CSS
+   - Font family, sizes, weights, letter-spacing
+   - Spacing values: padding, margin, gap
+   - Border radius values
+   - Shadow definitions
+   - Component-specific styles (button bg, card bg, nav active color)
 
-If Stitch is NOT available:
-1. Generate the design system from PRD + design rules (see below)
+**If Stitch is NOT available:**
+- Skip to Step 2 — generate design system from PRD + design rules
+- No reference screenshots (Claude makes visual decisions during build)
 
 ### Step 2: Generate DESIGN.md
 
-Write to `apps/<slug>/spec/DESIGN.md` following this structure exactly:
+Write to `apps/<slug>/spec/DESIGN.md`.
+
+**If Stitch was used:** populate with EXACT values parsed from Stitch CSS — not approximations.
+**If no Stitch:** generate values based on PRD §6 + design rules below.
+
+Required structure:
 
 ```markdown
 # <App Name> — Design System: "<Design Name>"
 
-**Philosophy**: <1-2 sentences — visual mood and inspiration>
+**Philosophy**: <1-2 sentences>
+**Source**: <Google Stitch / Generated from PRD>
 
 ---
 
@@ -66,8 +83,7 @@ Write to `apps/<slug>/spec/DESIGN.md` following this structure exactly:
 | inverse-primary | #... |
 
 ### Color Rules
-- <domain-specific rules, e.g., "every neutral is blue-tinted", "no pure black">
-- <accent usage rule>
+- <specific rules from this design>
 
 ---
 
@@ -75,16 +91,12 @@ Write to `apps/<slug>/spec/DESIGN.md` following this structure exactly:
 
 **Font**: <font family>
 
-| Scale | Size | Usage |
-|-------|------|-------|
-| display-lg | ... | Hero numbers, key metrics |
-| headline-md | ... | Section titles |
-| body-md | ... | Body text |
-| label-md | ... | Labels, captions |
-
-### Typography Rules
-- <e.g., "body text uses on-surface-variant, not black">
-- <e.g., "pair display-lg metrics with label-sm units">
+| Scale | Size | Weight | Usage |
+|-------|------|--------|-------|
+| display-lg | ...px | ... | Hero numbers, key metrics |
+| headline-md | ...px | ... | Section titles |
+| body-md | ...px | ... | Body text |
+| label-md | ...px | ... | Labels, captions |
 
 ---
 
@@ -92,132 +104,124 @@ Write to `apps/<slug>/spec/DESIGN.md` following this structure exactly:
 
 | Token | Value | Usage |
 |-------|-------|-------|
-| spacing-xs | ... | Tight clusters (label to value) |
-| spacing-sm | ... | List item gaps |
-| spacing-md | ... | Container padding |
-| spacing-lg | ... | Section separation |
-| spacing-xl | ... | Major section breaks |
+| spacing-xs | ...px | Tight clusters |
+| spacing-sm | ...px | List item gaps |
+| spacing-md | ...px | Container padding |
+| spacing-lg | ...px | Section separation |
+| spacing-xl | ...px | Major breaks |
 
 ---
 
 ## Shapes & Corners
 
-- Buttons: <radius>
-- Cards: <radius>
-- Containers: <radius>
-- <rules, e.g., "no sharp corners, minimum 0.5rem">
+- Buttons: <radius>px
+- Cards: <radius>px
+- Containers: <radius>px
 
 ---
 
 ## Elevation & Depth
 
-- <approach: tonal layering vs shadows>
-- <shadow definition if used>
-- <border approach: e.g., "no 1px borders, use color shifts">
+- <approach and specific values>
 
 ---
 
 ## Components
 
 ### Primary Button
-- Background: <color>
-- Text: <color>
-- Corner radius: <value>
-- Press effect: <animation>
+- Background: <hex>
+- Text: <hex>
+- Corner radius: <value>px
+- Height: <value>px
 
 ### Cards
-- Background: <color>
-- Corner radius: <value>
-- Dividers: <approach>
+- Background: <hex>
+- Corner radius: <value>px
+- Padding: <value>px
 
 ### Bottom Navigation
 - Tab count: <N>
-- Active: <color>
-- Inactive: <color>
+- Active: <hex>
+- Inactive: <hex>
+- Icons: <library and style>
 
 ### <App-specific components>
-- <e.g., Progress Ring, Breath Circle, Timer Display — with specific colors, sizes, animations>
+- <detailed specs>
 
 ---
 
 ## Screens
 
-### <Screen 1 Name>
-- Layout: <description of arrangement>
+### <Screen Name>
+- Reference: `design-screens/<screen-name>.png`
+- Layout: <description>
 - Primary CTA: <what, where>
 - Key elements: <list>
 
-### <Screen 2 Name>
-...
-
-(One section per screen from PRD §6)
+(One section per screen)
 
 ---
 
 ## Design Rules
 
-- <rule 1 — specific to this design>
-- <rule 2>
-- <rule 3>
+- <rules specific to this design>
 ```
 
-### Step 3: Design generation rules (when generating without Stitch)
+### Step 3: Design rules (when generating without Stitch)
 
-**Color generation:**
-- Start from the app's domain and mood: calming apps get nature tones (greens, blues), productivity gets clean neutrals, fitness gets energetic accents
-- Generate a full surface hierarchy (5-6 surface variants for tonal layering)
-- One primary accent color, one secondary — never more
-- All neutrals should be tinted with the primary hue (no pure grays)
-- Avoid pure black (#000000) for text — use tinted near-black
-- Dark mode: invert surfaces, lighten primary
+**Colors:** start from domain mood, generate full surface hierarchy (5-6 variants), tint all neutrals with primary hue, avoid pure black/gray.
 
-**Typography:**
-- Choose one font appropriate for the domain (or system default)
-- Define 4 scale levels: display, headline, body, label
-- Use consistent weight pairing (regular + semibold, not regular + bold + heavy)
+**Typography:** one font family, 4 scale levels, consistent weight pairing.
 
-**Spacing:**
-- Define 5 tokens from tight (4-8px) to generous (48-64px)
-- Generous whitespace between sections is mandatory — "airiness"
-- Tight clusters bind related data (label + value)
+**Spacing:** 5 tokens from 4-8px to 48-64px, generous whitespace between sections.
 
-**Components:**
-- Every component must have specific colors from the palette — no generic "blue"
-- Define press/interaction states
-- Every app-specific component (timer ring, progress bar, chart) needs its own spec
+**Components:** every component has specific hex colors from palette, press/interaction states defined.
 
-**Screens:**
-- One section per screen
-- Describe layout as spatial arrangement (top → bottom, or zones)
-- Name the primary CTA per screen
-- List key visible elements
+**Screens:** layout described as spatial arrangement, primary CTA named, key elements listed.
 
 ### Step 4: Review with user
 
-Show a summary via `AskUserQuestion`:
+Show screenshots (if Stitch) or summary (if generated). Ask via `AskUserQuestion`:
 
 ```
-question: "Design system generated. Review?"
+question: "Design system ready. Review?"
 header: "Design"
 options:
   - label: "Looks good"
-    description: "Save DESIGN.md and proceed"
+    description: "Save and proceed"
   - label: "Adjust colors"
-    description: "I want different color direction"
+    description: "Want different color direction"
   - label: "Adjust style"
-    description: "I want a different visual mood"
+    description: "Want different visual mood"
   - label: "Show full DESIGN.md"
-    description: "Let me read the complete document"
+    description: "Read the complete document"
 ```
+
+---
+
+## REFERENCE SCREENSHOTS
+
+When Stitch generates screens, save each as:
+```
+apps/<slug>/spec/design-screens/
+├── home.png
+├── detail.png
+├── settings.png
+├── history.png
+└── onboarding.png
+```
+
+These are used by:
+- `/build-app` — Claude reads them to understand intended layout while coding
+- `/test-app` — compare Maestro screenshots against reference screenshots
+- `/improve-app` — verify UX changes still match the design intent
 
 ---
 
 ## RULES
 
-- DESIGN.md is the visual source of truth — code MUST follow it
-- Every color in DESIGN.md must be a specific hex value — no "blue" or "dark"
-- Every component must reference palette tokens — no hardcoded colors
-- Must include dark mode variants
-- Must include screen-by-screen layout descriptions
-- The design must be cohesive — one mood, one accent, one font, consistent corners
-- Follow `.claude/rules/design-consistency.md` for structural rules
+- Every color must be a specific hex value — no "blue" or "dark"
+- Every spacing must be a specific px value — no "generous" or "tight"
+- If Stitch was used — values come from actual CSS, not guessed
+- DESIGN.md + reference screenshots together are the visual source of truth
+- Code must follow DESIGN.md; `/test-app` verifies against reference screenshots

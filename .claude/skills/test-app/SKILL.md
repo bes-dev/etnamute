@@ -6,99 +6,101 @@ disable-model-invocation: true
 
 Test an app like a real QA engineer. Requires Maestro + simulator + dev build.
 
-**Step 1: Build interaction map (BEFORE writing any flows)**
+**Step 1: Build interaction map**
 
-For every interactive element in the codebase (every `onPress`, `onValueChange`, `onSubmit`):
-1. Read the handler code — what function does it call?
-2. Trace the effect — does it update state? navigate? call API?
-3. Determine what VISIBLY changes in UI — trace state → re-render → what appears/disappears/changes?
-4. Decide how Maestro can verify that visible change
+For EVERY interactive element (`onPress`, `onValueChange`, `onSubmit` in the codebase):
 
-If a handler changes state but nothing visibly changes in UI — that's a **bug in the app**. Write a test that will FAIL on it.
+1. Read the handler code
+2. Trace the full effect chain: handler → state change → which components re-render → what changes in UI
+3. Classify the effect type:
 
-**Step 2: Generate .maestro/ flows**
+| Type | Example | How to test |
+|------|---------|-------------|
+| **Visual on current screen** | "Save" → success message appears | Maestro: tap → `assertVisible` new content |
+| **Visual on another screen** | "Set Dark theme" → all screens change background | Maestro: tap → navigate to each affected screen → `takeScreenshot` → Claude reads screenshot and verifies visual change |
+| **Navigation** | "View Details" → detail screen opens | Maestro: tap → `assertVisible` destination + `assertNotVisible` source |
+| **State without immediate visual** | Store update, preference save | Unit test: `fireEvent.press` → `expect(store.field).toBe(value)` |
+| **Side effect without visual** | Analytics event, prefetch, log | Unit test: `expect(mockFn).toHaveBeenCalled()` |
 
-Using the interaction map, generate flows. Every flow must test EFFECTS, not just EXISTENCE:
+4. For state/visual effects that span multiple screens — list ALL screens that depend on the changed state
 
-**Smoke flows** (tags: smoke):
-- Launch → crash detection → navigate all tabs → screenshot each
+**Step 2: Generate tests**
 
-**Functional flows** (tags: functional):
-For EVERY interactive element (buttons, toggles, inputs, selectors):
+**Unit tests** (`__tests__/`):
+For every element classified as "state without visual" or "side effect" — write jest test with `fireEvent.press` → verify store/mock.
 
-**ABSOLUTE RULE: every `tapOn` must be followed by an assertion proving something VISIBLY changed. A `takeScreenshot` is NOT an assertion. If you cannot write an assertVisible/assertNotVisible after a tap, the test is useless.**
+Also write unit tests for "visual on current screen" elements as backup — `fireEvent.press` → verify state changed (even if Maestro also tests it visually).
 
-- Buttons: tap → `assertVisible` new content or `assertNotVisible` old content
-- Toggles: tap → `assertVisible` new state text (e.g., "Dark Mode: On") or `assertWithAI` checking visual change
-- Forms: fill → submit → `assertVisible` success message or `assertNotVisible` form screen
-- Selections: tap option → `assertVisible` selected indicator or verify downstream content changed
-- Settings that affect visuals: change → `assertWithAI "background is now dark"` or verify text/color token changed. Then navigate away → come back → SAME assertion must still pass (persistence check)
-- Delete: add → delete → `assertNotVisible` deleted item → `assertVisible` empty state
+**Maestro flows** (`.maestro/`):
 
-**Common mistake to AVOID:** tap → takeScreenshot → move on. This proves nothing. The test passes even if the button is broken.
+*Smoke flows* (tags: smoke):
+- Launch → crash detection → navigate all tabs
 
-**For every interactive element, ask: "what should visibly change after I tap this?"** Then write an assertion for that change. If nothing visibly changes — the feature is broken and the test should fail.
+*Functional flows* (tags: functional):
+- For "visual on current screen": tap → `assertVisible`/`assertNotVisible`
+- For "navigation": tap → `assertVisible` destination
+- For "visual on another screen": tap → navigate to each affected screen → `takeScreenshot: <name>` (Claude will review visually in Step 4)
 
-**For settings/preferences that persist:**
-1. Tap the control
-2. Assert the new state is reflected in UI (text, visual indicator, or `assertWithAI`)
-3. Navigate to a different screen
-4. Come back
-5. Assert the same state is still shown (persistence)
-6. If the setting affects OTHER screens (e.g., visual theme) — navigate there and assert the effect is visible
+**RULES:**
+- Every `tapOn` must be followed by an assertion or screenshot for Claude review
+- `takeScreenshot` alone is NOT verification for current-screen effects — use `assertVisible`
+- `takeScreenshot` IS appropriate for cross-screen visual effects — Claude reads the image in Step 4
+- For settings that affect OTHER screens: tap setting → navigate to affected screen → `takeScreenshot` with descriptive name like `after-dark-theme-home.png`
 
-**Persistence flows** (tags: persistence):
+*Persistence flows* (tags: persistence):
 - Add data → `killApp` → `launchApp` (without clearState) → verify data survived
 
-**Error path flows** (tags: errors):
-- Submit empty form → verify error message
-- Submit invalid data → verify specific error → fix → resubmit → verify success
+*Error flows* (tags: errors):
+- Submit invalid → verify error → fix → verify success
 
-See `.claude/skills/maestro/SKILL.md` for Expo Router gotchas.
-
-**Step 2: Run tests**
+**Step 3: Run tests**
 
 ```bash
+# Unit tests
+npx jest --passWithNoTests
+
+# Maestro
 ../../scripts/smoke.sh .
 ```
 
-If smoke.sh not available, run flows individually:
-```bash
-maestro test --no-ansi --include-tags smoke .maestro/
-maestro test --no-ansi --include-tags functional .maestro/
-maestro test --no-ansi --include-tags persistence .maestro/
-```
+If fails → fix code, re-run. Max 3 attempts.
 
-If fails → read output, fix code (not the test unless testID changed), re-run. Max 3 attempts.
+**Step 4: Visual verification (Claude reads screenshots)**
 
-**Step 3: Visual UI Review**
+After Maestro flows pass, read EVERY screenshot captured in Step 2 via Read tool.
 
-After functional tests pass, review captured screenshots against:
+For each screenshot:
+1. Read the image file
+2. Compare against:
+   - **Expected state** from interaction map ("after tapping Dark, this screen should have dark background")
+   - **DESIGN.md** if exists (colors, spacing, typography)
+   - **Reference screenshots** if exist (`spec/design-screens/`)
+   - **UI checklist** (`.claude/rules/ui-review.md`)
+3. If the screenshot shows the WRONG state (e.g., light background after selecting Dark theme) — this is a bug. Report and fix.
 
-1. **Reference screenshots** (if `spec/design-screens/` exists) — side-by-side comparison
-2. **UI checklist** (`.claude/rules/ui-review.md`):
-   - Critical: safe areas, no placeholder icons, visual hierarchy, no placeholder text
-   - Major: color palette cohesive, tab bar professional, spacing consistent, typography hierarchy
-   - Minor: input labels, alignment, dark mode correctness
-3. Report per screen with severity levels
+**This is the step that catches "state changed but UI didn't update" bugs that Maestro assertions cannot detect.**
 
-If critical or major issues → fix, re-run, re-review. Max 2 iterations.
-
-**Step 4: Report**
+**Step 5: Report**
 
 ```
 ## Test Report: <app-name>
 
-### Functional Tests
-- Flows: X passed, Y failed
-- Interactive elements tested: <list>
-- Persistence: PASS/FAIL
-- Error handling: PASS/FAIL
+### Interaction Map
+| Element | Effect type | Test method | Result |
+|---------|------------|-------------|--------|
+| <btn> | visual/current | Maestro assertVisible | PASS |
+| <toggle> | visual/cross-screen | screenshot + Claude review | FAIL: UI not updated |
+| <input> | state only | unit test fireEvent | PASS |
 
-### Visual Review
-- Critical: X issues
-- Major: X issues
-- Minor: X issues
+### Unit Tests
+- X passed, Y failed
+
+### Maestro Flows
+- X passed, Y failed
+
+### Visual Verification
+- Screenshots reviewed: X
+- Issues found: <list with severity>
 
 ### Verdict: PASS / NEEDS FIXES
 ```

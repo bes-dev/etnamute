@@ -96,15 +96,7 @@ Execute in this order:
 
 ### Step 5: Verify
 
-```
-LOOP (max 3 attempts):
-  1. Run: ../../scripts/verify.sh .
-     (tsc + bundle + jest + runtime on simulator)
-  2. If exit 0 → PASS
-  3. If exit 1 → read error output, fix → go to 1
-```
-
-**verify.sh must exit 0 before reporting success.**
+Run the verify loop from `pipeline/qa.md` (reads testing level from `apps/<slug>/spec/testing-level.txt`).
 
 ### Step 6: Report
 

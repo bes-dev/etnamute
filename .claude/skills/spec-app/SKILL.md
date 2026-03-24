@@ -153,7 +153,7 @@ options:
 
 After these questions — no more user interaction until build is complete (unless user chose "Review PRD first").
 
-Save the testing level choice — it determines QA behavior during build.
+Save the testing level to `apps/<slug>/spec/testing-level.txt` (one word: `fast`, `standard`, or `full`). This file is read by `/build-app`, `/improve-app`, and `/fix-app` to determine QA behavior.
 
 Then tell user you're starting research (in their language).
 

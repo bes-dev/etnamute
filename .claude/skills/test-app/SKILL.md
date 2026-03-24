@@ -62,13 +62,24 @@ Also write unit tests for "visual on current screen" elements as backup — `fir
 
 **Step 3: Run tests**
 
+Read `.claude/skills/maestro/SKILL.md` for Maestro setup and Expo Router gotchas.
+
+**Use `smoke.sh` for Maestro** — it handles dev build, headless simulator, Metro, and cleanup:
+
 ```bash
 # Unit tests
 npx jest --passWithNoTests
 
-# Maestro
+# Maestro (dev build + headless simulator + cleanup)
 ../../scripts/smoke.sh .
 ```
+
+**Do NOT run Maestro manually.** `smoke.sh` handles:
+- Prebuild if `ios/` doesn't exist
+- Headless simulator boot (no GUI windows)
+- Dev build with correct bundleIdentifier (NOT Expo Go)
+- Metro in background
+- Simulator shutdown after tests
 
 If fails → fix code, re-run. Max 3 attempts.
 

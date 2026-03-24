@@ -12,6 +12,18 @@ set -uo pipefail
 
 APP_DIR="${1:?Usage: scripts/smoke.sh apps/<slug>}"
 
+# Cleanup on any exit (success, failure, or signal)
+METRO_PID=""
+BUILD_PID=""
+cleanup() {
+  [ -n "$METRO_PID" ] && kill $METRO_PID 2>/dev/null || true
+  [ -n "$BUILD_PID" ] && kill $BUILD_PID 2>/dev/null || true
+  lsof -ti:8081 2>/dev/null | xargs kill -9 2>/dev/null || true
+  xcrun simctl shutdown all 2>/dev/null || true
+  osascript -e 'quit app "Simulator"' 2>/dev/null || true
+}
+trap cleanup EXIT
+
 if [ ! -d "$APP_DIR" ]; then
   echo "FAIL: Directory $APP_DIR does not exist"
   exit 1
@@ -104,12 +116,7 @@ MAESTRO_EXIT=$?
 
 echo "$MAESTRO_OUTPUT"
 
-# Cleanup
-kill $METRO_PID 2>/dev/null || true
-kill $BUILD_PID 2>/dev/null || true
-lsof -ti:8081 2>/dev/null | xargs kill -9 2>/dev/null || true
-# Shutdown simulator
-xcrun simctl shutdown all 2>/dev/null || true
+# Cleanup handled by trap EXIT
 
 echo ""
 echo "=== Summary ==="

@@ -6,7 +6,11 @@ disable-model-invocation: true
 
 Build an app from a ready PRD. No interview. Designed for programmatic use by other AI agents or CI systems.
 
-PRD path: $ARGUMENTS
+**Usage:** `/headless <path-to-prd> [testing-level]`
+
+Parse `$ARGUMENTS` for:
+- First argument: path to PRD file (required)
+- Second argument: testing level — `fast`, `standard`, or `full` (default: `standard`)
 
 ---
 
@@ -29,9 +33,12 @@ If validation fails → list all errors, stop. Do NOT attempt to fix or guess.
 ```
 apps/<slug>/
 └── spec/
-    ├── prd.md      ← copy the input PRD here
-    └── plan.md     ← will be generated
+    ├── prd.md              ← copy the input PRD here
+    ├── plan.md             ← will be generated
+    └── testing-level.txt   ← from argument or "standard"
 ```
+
+Save the testing level to `apps/<slug>/spec/testing-level.txt`.
 
 ### Step 3: Plan
 
@@ -43,18 +50,7 @@ No user interaction. Plan is derived entirely from the PRD.
 
 5 milestones sequentially: M1 (Scaffold) → M2 (Screens) → M3 (Features) → M4 (Monetization, if enabled) → M5 (Polish)
 
-After EACH milestone, verify using Standard testing level:
-```
-LOOP (max 3 attempts):
-  1. Run: ../../scripts/verify.sh .
-     (tsc + bundle + jest + runtime on simulator)
-  2. If exit 0 → PASS
-  3. If exit 1 → fix → go to 1
-```
-
-Write unit tests for every handler alongside the code.
-
-For test writing guidelines, see `pipeline/qa.md`.
+After EACH milestone, run the verify loop from `pipeline/qa.md` (reads testing level from `spec/testing-level.txt`).
 
 ### Step 5: Finalize
 
@@ -71,7 +67,7 @@ Output build complete message.
 | Discovery interview | Yes (5-8 questions) | Skipped |
 | Web research | Yes (WebSearch) | Skipped (PRD must include §9) |
 | PRD approval | User confirms | PRD accepted as-is |
-| Testing level | User chooses | Always Standard |
+| Testing level | User chooses | Argument (default: standard) |
 | Build process | Identical | Identical |
 | QA | Identical | Identical |
 
@@ -105,4 +101,4 @@ Other AI agents can invoke headless builds by:
 1. Generating a PRD conforming to `pipeline/prd-schema.md`
 2. Saving it to a file
 3. Starting Claude Code in the etnamute directory
-4. Sending: "Headless build: <path-to-prd>"
+4. Sending: "Headless build: <path-to-prd> [fast|standard|full]"

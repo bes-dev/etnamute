@@ -4,9 +4,39 @@ Verify the app actually works — not just compiles.
 
 ---
 
-## THREE MANDATORY LEVELS
+## VERIFY LOOP
 
-Every milestone must pass all three levels before proceeding. No exceptions.
+Read testing level from `apps/<slug>/spec/testing-level.txt` (`fast`, `standard`, or `full`). Default to `standard` if file doesn't exist.
+
+**Fast:**
+```
+LOOP (max 3 attempts):
+  1. npx tsc --noEmit && npx expo export
+  2. Start on simulator, check runtime log for errors (45s wait)
+  3. If errors → fix → go to 1
+```
+No jest, no unit tests. User tests manually.
+
+**Standard:**
+```
+LOOP (max 3 attempts):
+  1. Run: ../../scripts/verify.sh .
+     (tsc + bundle + jest + runtime on simulator)
+  2. If exit 0 → PASS
+  3. If exit 1 → fix → go to 1
+```
+Write unit tests for every handler alongside the code (see WRITING TESTS below).
+
+**Full:**
+Same as Standard, plus after final milestone or UI-affecting changes:
+Run the full `/test-app` process — read `.claude/skills/test-app/SKILL.md` and follow every step.
+Maestro requires a dev build — use `../../scripts/smoke.sh .` (NOT manual Maestro invocation).
+
+---
+
+## THREE LEVELS (DETAIL)
+
+Every milestone must pass all applicable levels before proceeding.
 
 ### Level 1: Build Verification
 

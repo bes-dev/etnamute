@@ -1,77 +1,82 @@
 ---
 name: test-app
-description: Generate Maestro smoke tests, run them, and review UI quality via screenshots
+description: Generate and run Maestro functional tests, smoke tests, and visual UI review
 disable-model-invocation: true
 ---
 
-Test an app: smoke tests + visual UI review. Requires Maestro + simulator.
+Test an app like a real QA engineer. Requires Maestro + simulator + dev build.
 
 **Step 1: Generate .maestro/ flows**
 
-Read PRD §6 and actual code — extract testIDs, screen names, navigation.
+Read PRD, DESIGN.md (if exists), and actual code in `app/` + `src/`. Generate three types of flows:
 
-Generate flows that `takeScreenshot` of every screen. See `.claude/skills/maestro/SKILL.md` for gotchas.
+**Smoke flows** (tags: smoke):
+- Launch → crash detection → navigate all tabs → screenshot each
 
-**Step 2: Run smoke tests**
+**Functional flows** (tags: functional):
+For EVERY interactive element (buttons, toggles, inputs, selectors):
+- **Core rule: every `tapOn` must be followed by an assertion proving something changed**
+- Buttons: tap → verify UI updated (not just "button exists")
+- Toggles: tap → verify companion text or visual state changed
+- Forms: fill → submit → verify success state or navigation
+- Selections: tap option → verify selected state + downstream effect
+- Settings: change → navigate away → come back → verify persisted
+- Delete: add item → delete → verify gone → verify empty state returns
+
+**Persistence flows** (tags: persistence):
+- Add data → `killApp` → `launchApp` (without clearState) → verify data survived
+
+**Error path flows** (tags: errors):
+- Submit empty form → verify error message
+- Submit invalid data → verify specific error → fix → resubmit → verify success
+
+See `.claude/skills/maestro/SKILL.md` for Expo Router gotchas.
+
+**Step 2: Run tests**
 
 ```bash
 ../../scripts/smoke.sh .
 ```
 
-If fails → read output, fix code, re-run. Max 3 attempts.
+If smoke.sh not available, run flows individually:
+```bash
+maestro test --no-ansi --include-tags smoke .maestro/
+maestro test --no-ansi --include-tags functional .maestro/
+maestro test --no-ansi --include-tags persistence .maestro/
+```
+
+If fails → read output, fix code (not the test unless testID changed), re-run. Max 3 attempts.
 
 **Step 3: Visual UI Review**
 
-After smoke tests pass, review captured screenshots:
+After functional tests pass, review captured screenshots against:
 
-1. Read each screenshot from `apps/<slug>/screenshots/`
+1. **Reference screenshots** (if `spec/design-screens/` exists) — side-by-side comparison
+2. **UI checklist** (`.claude/rules/ui-review.md`):
+   - Critical: safe areas, no placeholder icons, visual hierarchy, no placeholder text
+   - Major: color palette cohesive, tab bar professional, spacing consistent, typography hierarchy
+   - Minor: input labels, alignment, dark mode correctness
+3. Report per screen with severity levels
 
-2. **If reference screenshots exist** (`apps/<slug>/spec/design-screens/`):
-   - Read both the Maestro screenshot AND the matching reference screenshot
-   - Compare side-by-side: does the implemented screen match the Stitch design?
-   - Check: same colors, same layout structure, same component styles, same spacing proportions
+If critical or major issues → fix, re-run, re-review. Max 2 iterations.
 
-3. **Evaluate each screenshot against this checklist:**
-
-   **Critical (users won't download):**
-   - [ ] No placeholder/default icons (Expo ▼ triangles, missing images, broken assets)
-   - [ ] No raw/unstyled system components (default toggles, unstyled inputs)
-   - [ ] No broken layout (overlapping elements, content cut off, elements off-screen)
-   - [ ] No error screens or red boxes visible
-   - [ ] Tab bar has real icons, not placeholders
-
-   **Major (users notice):**
-   - [ ] Colors match DESIGN.md palette (not random/default colors)
-   - [ ] Typography consistent — one font, proper hierarchy (title > body > caption)
-   - [ ] Spacing even and consistent — not cramped, not excessively empty
-   - [ ] One clear primary action per screen — not competing CTAs
-   - [ ] Empty states have icon + message + CTA (not just blank space or plain text)
-   - [ ] Status bar style matches app theme (dark text on light bg, light text on dark bg)
-
-   **Minor (designers notice):**
-   - [ ] Border radius consistent across all components
-   - [ ] Shadow/elevation consistent
-   - [ ] Active/selected states visually distinct from inactive
-   - [ ] Text doesn't overflow or truncate unexpectedly
-
-4. **Report per screen:**
+**Step 4: Report**
 
 ```
-## UI Review: <app-name>
+## Test Report: <app-name>
 
-### <Screen Name> (screenshot.png vs design-screens/screen.png)
-- Reference match: ✓ close / ⚠ deviates / ✗ doesn't match
-- Critical issues: <list or "none">
-- Major issues: <list or "none">
-- Minor issues: <list or "none">
+### Functional Tests
+- Flows: X passed, Y failed
+- Interactive elements tested: <list>
+- Persistence: PASS/FAIL
+- Error handling: PASS/FAIL
 
-### Overall
+### Visual Review
 - Critical: X issues
 - Major: X issues
 - Minor: X issues
-- Verdict: PASS / NEEDS FIXES
-```
 
-5. If critical or major issues found → fix code, re-run smoke.sh, re-review. Max 2 iterations.
+### Verdict: PASS / NEEDS FIXES
+```
 
 App: $ARGUMENTS

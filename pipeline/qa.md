@@ -37,12 +37,14 @@ Write and run tests for every milestone. Tests live in `__tests__/` alongside th
 **M2 (Screens):**
 - Each screen renders without crash: `render(<Screen />)` doesn't throw
 - Navigation structure is correct: expected screens exist in the layout
+- Interactive elements respond: `fireEvent.press(button)` → verify state or UI change
 
 **M3 (Features):**
 - Store logic: each Zustand store action produces correct state
 - Utility functions: pure functions with known inputs/outputs
 - Data persistence: SQLite operations (insert, query, update, delete)
 - Core user flow: create item → verify in store → verify persistence
+- **Interaction tests**: every button/toggle/input has a test that verifies it DOES something, not just exists
 
 **M4 (Monetization, if enabled):**
 - RevenueCat mock: paywall renders, premium gate works with mock entitlements

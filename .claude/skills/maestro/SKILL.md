@@ -1,71 +1,147 @@
 # Maestro Skill
 
-Maestro automates mobile UI on simulators. Used for smoke testing, visual verification, and screenshots.
+Maestro automates mobile UI on simulators. Used for functional testing, smoke testing, visual verification, and screenshots.
 
 **Always fetch Maestro docs via mcpdoc before writing flows** — API evolves between versions.
 
 ## Setup
 
-- **Dev builds required** — Expo Go doesn't support `launchApp`, `clearState`, or lifecycle control
+- **Dev builds required** — Expo Go doesn't support `launchApp`, `clearState`, `killApp`
 - Build with `npx expo run:ios` or `eas build --profile development-simulator`
 - App's `appId` = `ios.bundleIdentifier` / `android.package` from app.json
 
-## Expo Router + React Native Gotchas (learned from real usage)
+## Core Principle
 
-### Tab bar navigation doesn't work by text
-Expo Router tab labels render as accessibility elements like `"History, tab, 3 of 4"`. Plain `tapOn: "History"` won't work.
+**Every `tapOn` must be followed by an assertion proving something changed.** Never just assert an element exists — verify the interaction had an effect.
 
-**Solution**: use `maestro hierarchy` to find exact tab bar coordinates, then point-based tapping:
 ```yaml
-- tapOn:
-    point: "50%,93%"   # Center of tab bar, adjust per app
+# BAD: only checks button exists
+- assertVisible: "Save"
+
+# GOOD: tap and verify consequence
+- tapOn: "Save"
+- assertVisible: "Saved successfully"
+- assertNotVisible: "Unsaved changes"
 ```
 
-### accessibilityLabel hides children from Maestro
-A Pressable with `accessibilityLabel` groups all children into one element. Inner Text components become invisible to Maestro's text matcher.
+## Functional Testing Patterns
 
-**Solution**: assert on `id` (testID) instead of text, or assert on text that lives OUTSIDE the grouped component.
+### Button → verify effect
+```yaml
+- tapOn: "Add to Cart"
+- assertVisible: "Cart (1)"
+```
 
-### Reanimated/animated views invisible to Maestro
-Text inside scaled or animated Reanimated views may not be found by Maestro — especially at non-1.0 scale.
+### Toggle → verify state through companion text
+```yaml
+- tapOn:
+    id: "dark-mode-toggle"
+- assertVisible: "Dark Mode: On"
+```
 
-**Solution**: don't assert on text inside animated views. Use `id` selector on the containing view, or assert on static elements nearby.
+### Form → verify success
+```yaml
+- tapOn: { id: "email-input" }
+- inputText: "test@example.com"
+- hideKeyboard
+- tapOn: "Submit"
+- assertVisible: "Welcome"
+```
 
-### Flows must run sequentially, not in parallel
-Multiple flows with `launchApp: clearState: true` fight for the same simulator. Default `maestro test` on a directory may run them in parallel.
+### Persistence → kill and relaunch
+```yaml
+- tapOn: "Save Item"
+- assertVisible: "My Item"
+- killApp
+- launchApp            # WITHOUT clearState
+- assertVisible: "My Item"
+```
 
-**Solution**: run one flow at a time, or use `config.yaml` with `continueOnFailure: false` and explicit `flowsOrder`.
+### Settings → verify across screens
+```yaml
+- tapOn: "Settings"
+- tapOn: { id: "theme-dark" }
+- tapOn: "Home"        # Navigate away
+- tapOn: "Settings"    # Come back
+- assertVisible: "Theme: Dark"   # Still set
+```
 
-### waitForAnimationToEnd is not a sleep
-Returns immediately if no animation is detected. Cannot be used to "wait 8 seconds for a timer".
+### Delete → verify removed
+```yaml
+- swipe:
+    from: { id: "item-row" }
+    direction: LEFT
+- tapOn: "Delete"
+- assertNotVisible: "Item Name"
+- assertVisible: "No items yet"
+```
 
-**Solution**: use `extendedWaitUntil` with a visible condition, or restructure the test.
+### Error path → fix → success
+```yaml
+- tapOn: "Submit"
+- assertVisible: "Email is required"
+- tapOn: { id: "email-input" }
+- inputText: "valid@email.com"
+- tapOn: "Submit"
+- assertVisible: "Success"
+```
 
-## Scripts
+### Counter → verify increment
+```yaml
+- copyTextFrom: { id: "counter" }
+- evalScript: ${output.before = parseInt(maestro.copiedText)}
+- tapOn: { id: "increment" }
+- copyTextFrom: { id: "counter" }
+- evalScript: ${output.after = parseInt(maestro.copiedText)}
+- assertTrue:
+    condition: ${output.after === output.before + 1}
+```
 
-- `scripts/smoke.sh apps/<slug>` — handles prebuild, simulator boot, Metro, Maestro execution, cleanup
-- `scripts/verify.sh apps/<slug>` — unit tests + build + runtime check (no Maestro)
+## Expo Router Gotchas
 
-## Writing Flows
+### Tab bar — use point-based tapping
+```yaml
+- tapOn:
+    point: "50%,93%"   # Use maestro hierarchy to find exact coordinates
+```
 
-Fetch Maestro docs via mcpdoc for current command syntax. Key principles:
+### accessibilityLabel hides children
+Assert on `id` (testID) instead of inner text.
 
-- Use `id` selector (testID) over text — most stable
-- `waitForAnimationToEnd` after every navigation
-- `extendedWaitUntil` for async content — never arbitrary sleeps
-- `assertNotVisible: "Invariant Violation"` for crash detection
-- Tag all flows: `tags: [smoke]`
-- Use `maestro hierarchy` to debug element visibility issues
-- Capture debug screenshots: `--debug-output ./debug`
+### Reanimated views invisible
+Don't assert on text inside animated views. Use `id` or nearby static elements.
 
-## Directory Structure
+### Flows must run sequentially
+Use `config.yaml` with `continueOnFailure: false`.
+
+### waitForAnimationToEnd ≠ sleep
+Use `extendedWaitUntil` with a visible condition instead.
+
+### hideKeyboard unreliable on iOS
+Use `tapOn: { point: "50%,10%" }` as fallback.
+
+## Flow Organization
 
 ```
 .maestro/
 ├── config.yaml
-├── m-smoke.yaml        # Full navigation smoke test
-├── m-home.yaml         # Home screen details
-├── m-history.yaml      # History screen
-├── m-settings.yaml     # Settings screen
-└── subflows/           # Not auto-executed
+├── smoke/              # Navigation + crash detection
+│   └── all-screens.yaml
+├── functional/         # Every interactive element
+│   ├── home-interactions.yaml
+│   ├── settings-toggles.yaml
+│   └── form-submission.yaml
+├── persistence/        # killApp → relaunch → verify
+│   └── data-survives.yaml
+├── errors/             # Error paths
+│   └── form-validation.yaml
+└── subflows/           # Reusable (login, navigate-to)
+    └── login.yaml
 ```
+
+Tag flows: `tags: [smoke]`, `tags: [functional]`, `tags: [persistence]`, `tags: [errors]`
+
+## Scripts
+
+- `scripts/smoke.sh apps/<slug>` — prebuild, simulator, Metro, Maestro, cleanup
+- `scripts/verify.sh apps/<slug>` — unit tests + build + runtime (no Maestro)

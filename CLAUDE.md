@@ -195,6 +195,8 @@ Extract exact compatible versions from its `package.json`, then delete it. Use t
 - `babel.config.js` with `nativewind/babel` preset
 - `global.css` imported in root layout
 
+**Expo Go compatibility**: apps MUST work in Expo Go (`npx expo start`). Do NOT use packages that require native builds, TurboModules, or New Architecture. Only Expo SDK packages (`expo-*`) and pure JS packages. Install via `npx expo install`, not `npm install`. See `.claude/rules/app-patterns.md` for the full rule and known incompatible packages.
+
 **Peer dependency conflicts**: use `"overrides"` in package.json to pin conflicting transitive deps. This is preferred over `--legacy-peer-deps` (which is forbidden).
 
 ---

@@ -8,6 +8,20 @@ paths:
 
 Library choices and architectural patterns. When implementing any of these areas, fetch current docs via mcpdoc first.
 
+## Expo Go Compatibility (MANDATORY)
+
+Apps MUST work in Expo Go (`npx expo start`). This means:
+
+- **Only use packages from the Expo SDK** (`expo-*`) or pure JS packages
+- **Before adding ANY non-Expo package**: check if it requires native code, TurboModules, New Architecture, or a custom dev build. If it does — **do not use it**
+- **Install via `npx expo install`** — not `npm install`. Expo install resolves compatible versions and warns about incompatible packages
+- **If no Expo equivalent exists**: use a pure-JS alternative, or implement the feature without the package
+
+Packages that do NOT work in Expo Go (do NOT use):
+- `react-native-mmkv` (requires TurboModules) → use `@react-native-async-storage/async-storage`
+- `react-native-keyboard-controller` (requires native build) → use `KeyboardAvoidingView`
+- Any package with `pod install` / native linking requirements not covered by Expo prebuild
+
 ## Images
 
 - Use `expo-image` — not react-native-fast-image (unmaintained, no Fabric support)
@@ -54,7 +68,7 @@ Library choices and architectural patterns. When implementing any of these areas
 ## Data Persistence
 
 - **Relational data**: expo-sqlite with WAL mode enabled (`PRAGMA journal_mode = WAL`)
-- **Key-value storage**: prefer MMKV (synchronous, fast) over AsyncStorage (deprecated in newer SDKs)
+- **Key-value storage**: `@react-native-async-storage/async-storage`
 - **Auth tokens/secrets**: expo-secure-store (encrypted)
 - SQLite migrations: use `PRAGMA user_version` to track schema version, sequential `if (version < N)` blocks
 - Set `PRAGMA user_version` only at the END of all migrations — if app crashes mid-migration, it reruns safely

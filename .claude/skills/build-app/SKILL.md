@@ -35,6 +35,8 @@ Read `pipeline/plan.md` — generate 9-section implementation plan.
 
 ## PHASE 3: FINALIZE
 
+**If testing level is Full:** after M5, invoke `/test-app <slug>`. Do NOT write your own tests or Maestro flows — `/test-app` owns the entire testing process. Wait for it to complete before writing FINAL_VERDICT.
+
 Write to `apps/<slug>/ralph/FINAL_VERDICT.md`. Include testing level used.
 
 **verify.sh must exit 0 (Standard/Full) or tsc+bundle+runtime must pass (Fast) before BUILD COMPLETE.**

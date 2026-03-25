@@ -28,9 +28,10 @@ LOOP (max 3 attempts):
 Write unit tests for every handler alongside the code (see WRITING TESTS below).
 
 **Full:**
-Same as Standard, plus after final milestone or UI-affecting changes:
-Run the full `/test-app` process — read `.claude/skills/test-app/SKILL.md` and follow every step.
-Maestro requires a dev build — use `../../scripts/smoke.sh .` (NOT manual Maestro invocation).
+Same as Standard for milestones M1-M4. After M5, invoke `/test-app <slug>` as a separate command.
+Do NOT improvise testing. Do NOT write your own Maestro flows or visual checks.
+`/test-app` owns the entire testing process: interaction map, unit tests, Maestro flows, visual verification.
+You MUST execute it, not approximate it.
 
 ---
 

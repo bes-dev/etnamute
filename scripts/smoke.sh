@@ -93,13 +93,16 @@ if [ "$PLATFORM" = "ios" ]; then
 
   # Resolve scheme and bundle ID from Xcode project
   XCWORKSPACE=$(find ios -name "*.xcworkspace" -maxdepth 1 | head -1)
-  SCHEME=$(xcodebuild -workspace "$XCWORKSPACE" -list 2>/dev/null | grep -A 10 "Schemes:" | grep -v "Schemes:" | head -1 | xargs)
-  BUNDLE_ID=$(grep -A 1 "PRODUCT_BUNDLE_IDENTIFIER" ios/*.xcodeproj/project.pbxproj 2>/dev/null | grep -oE '"[^"]*"' | head -1 | tr -d '"' || echo "")
+  # Scheme name = workspace name (without path and extension)
+  SCHEME=$(basename "$XCWORKSPACE" .xcworkspace)
+  BUNDLE_ID=$(node -e "const c = require('./app.config.js'); console.log(c.expo?.ios?.bundleIdentifier || c.ios?.bundleIdentifier || '')" 2>/dev/null || echo "")
 
-  # If bundle ID not found in pbxproj, try app.config.js
   if [ -z "$BUNDLE_ID" ]; then
-    BUNDLE_ID=$(node -e "const c = require('./app.config.js'); console.log(c.expo?.ios?.bundleIdentifier || c.ios?.bundleIdentifier || '')" 2>/dev/null || echo "")
+    echo -e "${RED}Cannot determine bundle ID from app.config.js${NC}"
+    exit 1
   fi
+
+  echo "Scheme: $SCHEME, Bundle ID: $BUNDLE_ID"
 
   # Build with xcodebuild (never opens Simulator.app)
   echo "Building app with xcodebuild..."

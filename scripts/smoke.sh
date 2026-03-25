@@ -111,12 +111,12 @@ if [ "$PLATFORM" = "ios" ]; then
 
   echo "Scheme: $SCHEME, Bundle ID: $BUNDLE_ID"
 
-  # Build with xcodebuild (never opens Simulator.app)
-  echo "Building app with xcodebuild..."
+  # Build Release — no LogBox, no dev warnings, no yellow banners blocking UI
+  echo "Building app with xcodebuild (Release)..."
   xcodebuild \
     -workspace "$XCWORKSPACE" \
     -scheme "$SCHEME" \
-    -configuration Debug \
+    -configuration Release \
     -sdk iphonesimulator \
     -destination "id=$DEVICE_ID" \
     -derivedDataPath /tmp/etnamute-build \
@@ -130,7 +130,7 @@ if [ "$PLATFORM" = "ios" ]; then
   BUILD_PID=""
 
   # Find and install the .app
-  APP_PATH=$(find /tmp/etnamute-build -name "*.app" -path "*Debug-iphonesimulator*" | head -1)
+  APP_PATH=$(find /tmp/etnamute-build -name "*.app" -path "*Release-iphonesimulator*" | head -1)
   if [ -z "$APP_PATH" ]; then
     echo -e "${RED}Build failed — no .app found${NC}"
     cat /tmp/etnamute-smoke-build.log | tail -20
@@ -180,10 +180,12 @@ else
   done
 fi
 
-# Start Metro separately in background (no dev tools)
-REACT_NATIVE_DEVTOOLS_PORT=0 npx expo start --no-dev > /tmp/etnamute-smoke-metro.log 2>&1 &
-METRO_PID=$!
-sleep 10
+# Start Metro for Android (Release iOS has bundle embedded, no Metro needed)
+if [ "$PLATFORM" = "android" ]; then
+  REACT_NATIVE_DEVTOOLS_PORT=0 npx expo start --no-dev > /tmp/etnamute-smoke-metro.log 2>&1 &
+  METRO_PID=$!
+  sleep 10
+fi
 
 # Run Maestro
 echo ""

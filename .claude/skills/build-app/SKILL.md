@@ -35,7 +35,7 @@ Read `pipeline/plan.md` — generate 9-section implementation plan.
 
 ## PHASE 3: FINALIZE
 
-**If testing level is Full:** after M5, invoke `/test-app <slug>`. Do NOT write your own tests or Maestro flows — `/test-app` owns the entire testing process. Wait for it to complete before writing FINAL_VERDICT.
+**If testing level is Full:** after M5, read `.claude/skills/test-app/SKILL.md` and follow EVERY step in order (interaction map → unit tests → Maestro flows → visual verification). Do NOT skip steps. Do NOT write your own test approach — test-app SKILL.md is the source of truth for the testing process.
 
 Write to `apps/<slug>/ralph/FINAL_VERDICT.md`. Include testing level used.
 

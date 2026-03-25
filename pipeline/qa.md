@@ -28,10 +28,15 @@ LOOP (max 3 attempts):
 Write unit tests for every handler alongside the code (see WRITING TESTS below).
 
 **Full:**
-Same as Standard for milestones M1-M4. After M5, invoke `/test-app <slug>` as a separate command.
-Do NOT improvise testing. Do NOT write your own Maestro flows or visual checks.
-`/test-app` owns the entire testing process: interaction map, unit tests, Maestro flows, visual verification.
-You MUST execute it, not approximate it.
+Same as Standard for milestones M1-M4. After M5, read `.claude/skills/test-app/SKILL.md` and follow EVERY step in order:
+1. Build interaction map (Step 1)
+2. Generate tests (Step 2)
+3. Fetch Maestro docs via mcpdoc + read maestro skill (Step 2.5)
+4. Run tests via smoke.sh (Step 3)
+5. Visual verification of screenshots (Step 4)
+6. Report (Step 5)
+
+Do NOT skip steps. Do NOT improvise. test-app SKILL.md is the source of truth.
 
 ---
 

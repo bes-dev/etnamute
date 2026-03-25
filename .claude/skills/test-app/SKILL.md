@@ -60,12 +60,12 @@ Also write unit tests for "visual on current screen" elements as backup — `fir
 *Error flows* (tags: errors):
 - Submit invalid → verify error → fix → verify success
 
-**Step 2.5: Before writing ANY Maestro flow**
+**Step 2.5: Before writing or modifying ANY Maestro flow**
 
 1. Fetch Maestro docs via mcpdoc — API changes between versions. Do NOT guess command names.
-2. Read `.claude/skills/maestro/SKILL.md` — setup requirements, Expo Router gotchas, flow patterns.
+2. Read `.claude/skills/maestro/SKILL.md` — setup requirements, Expo Router gotchas, flow template.
 
-Both are MANDATORY before writing the first flow. Skip either → you will waste iterations on invalid commands and wrong patterns.
+MANDATORY even if flows already exist — you need the docs to verify existing flows are correct and to write new ones for uncovered interactions from Step 1.
 
 **Step 3: Run tests**
 

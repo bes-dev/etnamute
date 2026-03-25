@@ -60,7 +60,7 @@ Break into 5 milestones with checklists:
 **M1: Scaffold**
 - [ ] Resolve versions via `npx create-expo-app@latest`
 - [ ] package.json with correct `"main": "expo-router/entry"`
-- [ ] app.config.js
+- [ ] app.config.js — MUST use `module.exports = { ... }` (CommonJS), NOT `export default` (ESM). Scripts use `require()` to read config.
 - [ ] TypeScript config
 - [ ] NativeWind setup: metro.config.js, babel.config.js, global.css (fetch docs first)
 - [ ] **Jest + jest-expo + @testing-library/react-native setup**

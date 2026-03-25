@@ -2,13 +2,45 @@
 
 Maestro automates mobile UI on simulators. Used for functional testing, smoke testing, visual verification, and screenshots.
 
-**Always fetch Maestro docs via mcpdoc before writing flows** — API evolves between versions.
+**MANDATORY: Fetch Maestro docs via mcpdoc before writing ANY flow.** Do NOT guess command names — commands like `clearText` don't exist. Use mcpdoc to verify available commands.
 
 ## Setup
 
 - **Dev builds required** — Expo Go doesn't support `launchApp`, `clearState`, `killApp`
-- Build with `npx expo run:ios` or `eas build --profile development-simulator`
-- App's `appId` = `ios.bundleIdentifier` / `android.package` from app.json
+- **Always use `scripts/smoke.sh`** for running flows — handles build, simulator, Metro, cleanup
+- App's `appId` = `ios.bundleIdentifier` / `android.package` from app.config.js
+
+## Flow Template
+
+Every flow MUST follow this structure. Copy and adapt — do NOT improvise from scratch:
+
+```yaml
+appId: <bundle-id-from-app.config.js>
+tags:
+  - <smoke|functional|persistence|errors>
+---
+- launchApp:
+    clearState: true
+- extendedWaitUntil:
+    visible: "<first screen element>"
+    timeout: 15000
+
+# === Your test steps here ===
+# After EVERY navigation or state change, use extendedWaitUntil:
+- tapOn:
+    id: "<testID>"
+- extendedWaitUntil:
+    visible: "<expected result>"
+    timeout: 10000
+
+# At the end, take a screenshot for visual verification:
+- takeScreenshot: <descriptive_name>
+```
+
+**Rules:**
+- NEVER use `waitForAnimationToEnd` as a wait — use `extendedWaitUntil` with a visible condition
+- NEVER use `assertVisible` right after navigation — use `extendedWaitUntil` first, then `assertVisible` for secondary checks
+- NEVER use commands you haven't verified in docs (e.g., `clearText` doesn't exist — use `eraseText`)
 
 ## Core Principle
 
@@ -17,134 +49,167 @@ Maestro automates mobile UI on simulators. Used for functional testing, smoke te
 ```yaml
 # BAD — proves nothing:
 - tapOn: "Save"
-- takeScreenshot: "after-save"    # Screenshot is NOT verification!
+- takeScreenshot: "after-save"
 
 # GOOD — proves the tap worked:
 - tapOn: "Save"
-- assertVisible: "Saved successfully"
-- assertNotVisible: "Unsaved changes"
+- extendedWaitUntil:
+    visible: "Saved successfully"
+    timeout: 5000
 ```
 
-**`takeScreenshot` is documentation, NOT verification.** A test that only takes screenshots after taps will PASS even if every button is broken. Always pair with `assertVisible`/`assertNotVisible`/`assertWithAI`.
+**`takeScreenshot` is documentation, NOT verification.**
+
+## Tab Bar Navigation
+
+Expo Router tab bars require point-based tapping. To find correct coordinates:
+
+```bash
+# Run ONCE before writing tab flows:
+maestro hierarchy 2>&1 | grep -i "tab\|TabBar\|bottomTabBar"
+```
+
+**Calculate tab positions** from the number of tabs:
+
+| Tabs | Tab 1 | Tab 2 | Tab 3 | Tab 4 | Tab 5 |
+|------|-------|-------|-------|-------|-------|
+| 2    | 25%   | 75%   | —     | —     | —     |
+| 3    | 17%   | 50%   | 83%   | —     | —     |
+| 4    | 12%   | 37%   | 63%   | 88%   | —     |
+| 5    | 10%   | 30%   | 50%   | 70%   | 90%   |
+
+Y-coordinate: **93%** (works for standard iOS tab bar with safe area).
+
+```yaml
+# Example: 3-tab app, tap middle tab
+- tapOn:
+    point: "50%,93%"
+- extendedWaitUntil:
+    visible:
+      id: "<target-screen-testID>"
+    timeout: 10000
+```
+
+**After tapping a tab, always wait for the target screen's testID** — not text that might appear on multiple screens.
+
+## Keyboard Handling
+
+```yaml
+# Preferred: tap a label/header above the keyboard to dismiss
+- tapOn: "SECTION LABEL"
+
+# Fallback: tap top of screen
+- tapOn:
+    point: "50%,5%"
+
+# For decimal/number pad (hideKeyboard often fails):
+- tapOn: "NEXT FIELD LABEL"
+```
+
+**Do NOT use `hideKeyboard`** — it fails on custom keyboards, decimal pads, and formSheet modals.
 
 ## Functional Testing Patterns
 
 ### Button → verify effect
 ```yaml
 - tapOn: "Add to Cart"
-- assertVisible: "Cart (1)"
+- extendedWaitUntil:
+    visible: "Cart (1)"
+    timeout: 5000
 ```
 
-### Toggle → verify state through companion text
+### Form → dismiss keyboard → submit
 ```yaml
-- tapOn:
-    id: "<toggle-testID>"
-- assertVisible: "<new state text>"
-```
-
-### Form → verify success
-```yaml
-- tapOn: { id: "email-input" }
-- inputText: "test@example.com"
-- hideKeyboard
-- tapOn: "Submit"
-- assertVisible: "Welcome"
+- tapOn: { id: "input-name" }
+- inputText: "Netflix"
+- tapOn: "BILLING CYCLE"          # Dismiss keyboard by tapping a label
+- tapOn: { id: "input-price" }
+- inputText: "15.49"
+- tapOn: "CATEGORY"               # Dismiss decimal pad
+- scrollUntilVisible:
+    element: { id: "btn-submit" }
+    direction: DOWN
+    timeout: 5000
+- tapOn: { id: "btn-submit" }
+- extendedWaitUntil:
+    visible: "Netflix"
+    timeout: 10000
 ```
 
 ### Persistence → kill and relaunch
 ```yaml
 - tapOn: "Save Item"
-- assertVisible: "My Item"
+- extendedWaitUntil:
+    visible: "My Item"
+    timeout: 5000
 - killApp
-- launchApp            # WITHOUT clearState
-- assertVisible: "My Item"
+- launchApp
+- extendedWaitUntil:
+    visible: "My Item"
+    timeout: 15000
 ```
 
-### Settings → verify across screens
+### Cross-screen settings
 ```yaml
-- tapOn: "<settings-tab>"
-- tapOn: { id: "<setting-control>" }
-- tapOn: "<other-tab>"     # Navigate away
-- tapOn: "<settings-tab>"  # Come back
-- assertVisible: "<expected persisted state>"
+# Change setting
+- tapOn: { id: "btn-currency-eur" }
+# Navigate to another screen
+- tapOn:
+    point: "17%,93%"
+- extendedWaitUntil:
+    visible: { id: "screen-home" }
+    timeout: 10000
+# Verify setting applied
+- takeScreenshot: currency_cross_screen
 ```
 
 ### Delete → verify removed
 ```yaml
-- swipe:
-    from: { id: "item-row" }
-    direction: LEFT
 - tapOn: "Delete"
+- extendedWaitUntil:
+    visible: "No items yet"
+    timeout: 10000
 - assertNotVisible: "Item Name"
-- assertVisible: "No items yet"
 ```
 
 ### Error path → fix → success
 ```yaml
-- tapOn: "Submit"
-- assertVisible: "Email is required"
-- tapOn: { id: "email-input" }
-- inputText: "valid@email.com"
-- tapOn: "Submit"
-- assertVisible: "Success"
-```
-
-### Counter → verify increment
-```yaml
-- copyTextFrom: { id: "counter" }
-- evalScript: ${output.before = parseInt(maestro.copiedText)}
-- tapOn: { id: "increment" }
-- copyTextFrom: { id: "counter" }
-- evalScript: ${output.after = parseInt(maestro.copiedText)}
-- assertTrue:
-    condition: ${output.after === output.before + 1}
+- tapOn: { id: "btn-submit" }
+- extendedWaitUntil:
+    visible: "Name is required"
+    timeout: 5000
+- tapOn: { id: "input-name" }
+- inputText: "valid name"
+- tapOn: { id: "btn-submit" }
+- extendedWaitUntil:
+    visible: "Success"
+    timeout: 10000
 ```
 
 ## Expo Router Gotchas
 
-### Tab bar — use point-based tapping
-```yaml
-- tapOn:
-    point: "50%,93%"   # Use maestro hierarchy to find exact coordinates
-```
-
-### accessibilityLabel hides children
-Assert on `id` (testID) instead of inner text.
-
-### Reanimated views invisible
-Don't assert on text inside animated views. Use `id` or nearby static elements.
-
-### Flows must run sequentially
-Use `config.yaml` with `continueOnFailure: false`.
-
-### waitForAnimationToEnd ≠ sleep
-Use `extendedWaitUntil` with a visible condition instead.
-
-### hideKeyboard unreliable on iOS
-Use `tapOn: { point: "50%,10%" }` as fallback.
+- **Tab bar**: point-based tapping only (see table above)
+- **accessibilityLabel hides children**: assert on `id` (testID), not inner text
+- **accessibilityRole="button"**: aggregates child text — add `accessibilityLabel` to the component, or assert on testID
+- **Reanimated views**: invisible to Maestro — use `id` or nearby static elements
+- **Flows must run sequentially**: use `config.yaml` with `continueOnFailure: false`
+- **formSheet modals**: `tapOn: { point: "50%,5%" }` may tap OUTSIDE the modal — tap a label inside the form instead
 
 ## Flow Organization
 
 ```
 .maestro/
 ├── config.yaml
-├── smoke/              # Navigation + crash detection
-│   └── all-screens.yaml
-├── functional/         # Every interactive element
-│   ├── home-interactions.yaml
-│   ├── settings-toggles.yaml
-│   └── form-submission.yaml
-├── persistence/        # killApp → relaunch → verify
-│   └── data-survives.yaml
-├── errors/             # Error paths
-│   └── form-validation.yaml
-└── subflows/           # Reusable (login, navigate-to)
-    └── login.yaml
+├── smoke-*.yaml          # Navigation + crash detection
+├── func-*.yaml           # Functional flows
+├── persist-*.yaml        # killApp → relaunch → verify
+└── error-*.yaml          # Error paths
 ```
 
 Tag flows: `tags: [smoke]`, `tags: [functional]`, `tags: [persistence]`, `tags: [errors]`
 
 ## Scripts
 
-- `scripts/smoke.sh apps/<slug>` — prebuild, simulator, Metro, Maestro, cleanup
+- `scripts/smoke.sh apps/<slug>` — dev build + headless simulator + Metro + Maestro + cleanup
+- `scripts/smoke.sh apps/<slug> smoke` — run only smoke-tagged flows
 - `scripts/verify.sh apps/<slug>` — unit tests + build + runtime (no Maestro)

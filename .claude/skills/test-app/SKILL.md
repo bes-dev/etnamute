@@ -74,14 +74,15 @@ npx jest --passWithNoTests
 ../../scripts/smoke.sh .
 ```
 
-**Do NOT run Maestro manually.** `smoke.sh` handles:
-- Prebuild if `ios/` doesn't exist
-- Headless simulator boot (no GUI windows)
-- Dev build with correct bundleIdentifier (NOT Expo Go)
-- Metro in background
-- Simulator shutdown after tests
+**NEVER run Maestro, xcodebuild, simctl, or expo run:ios manually. ALWAYS use `smoke.sh`.**
 
-If fails → fix code, re-run. Max 3 attempts.
+If `smoke.sh` fails:
+1. Read the error output
+2. Fix the **cause** (broken flow, bad testID, app code bug, or smoke.sh itself)
+3. Re-run `../../scripts/smoke.sh .`
+4. Max 3 attempts
+
+Do NOT work around `smoke.sh` by running commands manually. If the script itself is broken — fix the script.
 
 **Step 4: Visual verification (Claude reads screenshots)**
 

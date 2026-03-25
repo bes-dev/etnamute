@@ -5,6 +5,9 @@
 
 set -uo pipefail
 
+# Add common tool paths not available in non-interactive shells
+export PATH="$HOME/.maestro/bin:$HOME/.local/bin:/opt/homebrew/bin:$PATH"
+
 APP_DIR="${1:?Usage: scripts/verify.sh apps/<slug>}"
 
 if [ ! -d "$APP_DIR" ]; then

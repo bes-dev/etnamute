@@ -1,6 +1,10 @@
 #!/bin/bash
-# Run Maestro smoke tests for an Etnamute app.
-# Usage: scripts/smoke.sh apps/<slug>
+# Run Maestro tests for an Etnamute app.
+# Usage: scripts/smoke.sh apps/<slug> [tags]
+# Examples:
+#   scripts/smoke.sh apps/renewly              — run ALL flows
+#   scripts/smoke.sh apps/renewly smoke        — run only smoke-tagged flows
+#   scripts/smoke.sh apps/renewly functional   — run only functional flows
 # Exit 0 = all pass, exit 1 = failure
 #
 # Prerequisites:
@@ -9,6 +13,9 @@
 # - .maestro/ directory with yaml flows in the app directory
 
 set -uo pipefail
+
+# Add common tool paths not available in non-interactive shells
+export PATH="$HOME/.maestro/bin:$HOME/.local/bin:/opt/homebrew/bin:$PATH"
 
 APP_DIR="${1:?Usage: scripts/smoke.sh apps/<slug>}"
 
@@ -132,9 +139,7 @@ if [ "$PLATFORM" = "ios" ]; then
 
   echo "Installing app..."
   xcrun simctl install "$DEVICE_ID" "$APP_PATH"
-
-  echo "Launching app..."
-  xcrun simctl launch "$DEVICE_ID" "$BUNDLE_ID" 2>/dev/null || true
+  # Don't launch — Maestro handles app launch via launchApp in flows
 
 else
   # --- Linux: Android ---
@@ -185,9 +190,16 @@ echo ""
 echo "Running Maestro flows ($FLOW_COUNT flows)..."
 echo ""
 
+# Accept optional second argument for tags (default: run all)
+TAGS="${2:-}"
+TAG_FLAG=""
+if [ -n "$TAGS" ]; then
+  TAG_FLAG="--include-tags $TAGS"
+fi
+
 MAESTRO_OUTPUT=$(maestro test \
   --no-ansi \
-  --include-tags smoke \
+  $TAG_FLAG \
   --test-output-dir ./screenshots \
   .maestro/ 2>&1)
 MAESTRO_EXIT=$?

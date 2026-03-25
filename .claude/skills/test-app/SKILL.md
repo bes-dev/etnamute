@@ -70,7 +70,7 @@ Read `.claude/skills/maestro/SKILL.md` for Maestro setup and Expo Router gotchas
 # Unit tests
 npx jest --passWithNoTests
 
-# Maestro (dev build + headless simulator + cleanup)
+# Maestro — run ALL flows (no tag filter)
 ../../scripts/smoke.sh .
 ```
 

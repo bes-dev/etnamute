@@ -21,8 +21,14 @@ NC='\033[0m'
 FAILED=0
 PASSED_TESTS=""
 
+# Detect platform
+case "$(uname -s)" in
+  Darwin) PLATFORM="ios" ;;
+  *)      PLATFORM="android" ;;
+esac
+
 echo ""
-echo "=== Etnamute Verify: $(basename $APP_DIR) ==="
+echo "=== Etnamute Verify: $(basename $APP_DIR) [${PLATFORM}] ==="
 echo ""
 
 # --- Level 1: Build ---
@@ -39,7 +45,7 @@ else
 fi
 
 echo -n "Bundle (expo export)... "
-EXPORT_LOG=$(npx expo export --platform ios 2>&1)
+EXPORT_LOG=$(npx expo export --platform "$PLATFORM" 2>&1)
 if echo "$EXPORT_LOG" | grep -q "Exported:"; then
   echo -e "${GREEN}PASS${NC}"
 else
@@ -84,29 +90,54 @@ echo "--- Level 3: Runtime ---"
 
 RUNTIME_LOG="/tmp/etnamute-runtime-$(basename $APP_DIR).log"
 rm -f "$RUNTIME_LOG"
+EXPO_PID=""
 
-# Kill Simulator.app if running (prevents GUI windows from popping up)
-osascript -e 'quit app "Simulator"' 2>/dev/null || true
-sleep 1
+cleanup_runtime() {
+  [ -n "$EXPO_PID" ] && kill $EXPO_PID 2>/dev/null || true
+  lsof -ti:8081 2>/dev/null | xargs kill -9 2>/dev/null || true
+  if [ "$PLATFORM" = "ios" ]; then
+    xcrun simctl shutdown all 2>/dev/null || true
+    osascript -e 'quit app "Simulator"' 2>/dev/null || true
+  fi
+}
+trap cleanup_runtime EXIT
 
-# Boot simulator headless (no GUI window)
-DEVICE_ID=$(xcrun simctl list devices available | grep "iPhone" | head -1 | grep -oE '[A-F0-9-]{36}')
-xcrun simctl boot "$DEVICE_ID" 2>/dev/null || true
+if [ "$PLATFORM" = "ios" ]; then
+  # macOS: iOS Simulator
+  osascript -e 'quit app "Simulator"' 2>/dev/null || true
+  sleep 1
 
-echo "Starting app on simulator (headless)..."
-REACT_NATIVE_DEVTOOLS_PORT=0 npx expo start --ios --no-dev > "$RUNTIME_LOG" 2>&1 &
-EXPO_PID=$!
+  DEVICE_ID=$(xcrun simctl list devices available | grep "iPhone" | head -1 | grep -oE '[A-F0-9-]{36}')
+  xcrun simctl boot "$DEVICE_ID" 2>/dev/null || true
+
+  echo "Starting app on iOS simulator (headless)..."
+  REACT_NATIVE_DEVTOOLS_PORT=0 npx expo start --ios --no-dev > "$RUNTIME_LOG" 2>&1 &
+  EXPO_PID=$!
+else
+  # Linux: Android Emulator
+  # Check if emulator is running
+  if ! adb devices 2>/dev/null | grep -q "emulator"; then
+    echo "Starting Android emulator..."
+    AVD_NAME=$(emulator -list-avds 2>/dev/null | head -1)
+    if [ -z "$AVD_NAME" ]; then
+      echo -e "${RED}FAIL${NC} — no Android AVD found. Create one with Android Studio."
+      exit 1
+    fi
+    emulator -avd "$AVD_NAME" -no-window -no-audio -no-boot-anim &
+    adb wait-for-device
+    sleep 10
+  fi
+
+  echo "Starting app on Android emulator..."
+  REACT_NATIVE_DEVTOOLS_PORT=0 npx expo start --android --no-dev > "$RUNTIME_LOG" 2>&1 &
+  EXPO_PID=$!
+fi
 
 echo "Waiting 45 seconds for runtime errors..."
 sleep 45
 
 echo -n "Checking runtime log... "
 ERRORS=$(grep -iE -A 10 " ERROR |TypeError|ReferenceError|is not a function|is undefined|Exception in HostFunction|Invariant Violation" "$RUNTIME_LOG" 2>/dev/null || true)
-
-# Kill expo and all child processes
-kill -- -$EXPO_PID 2>/dev/null || kill $EXPO_PID 2>/dev/null || true
-# Also kill any Metro process on port 8081
-lsof -ti:8081 2>/dev/null | xargs kill -9 2>/dev/null || true
 
 if [ -n "$ERRORS" ]; then
   echo -e "${RED}FAIL${NC}"

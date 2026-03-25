@@ -156,11 +156,16 @@ After Level 1 and Level 2 pass, verify the app actually runs without runtime err
 
 **`npx expo export` catches bundle errors but NOT runtime errors.** APIs that bundle correctly but crash at runtime (e.g., `SplashModule.internalPreventAutoHideAsync is not a function`) are only caught by actually running the app.
 
-**Step 1: Start the app on simulator and capture log:**
+**Step 1: Start the app on simulator/emulator and capture log:**
 
 ```bash
-npx expo start --ios 2>&1 | tee /tmp/expo-runtime.log &
+# macOS: iOS simulator
+npx expo start --ios --no-dev 2>&1 | tee /tmp/expo-runtime.log &
+# Linux: Android emulator
+npx expo start --android --no-dev 2>&1 | tee /tmp/expo-runtime.log &
 ```
+
+Use `scripts/verify.sh` instead of running these manually — it detects the platform automatically.
 
 **Step 2: WAIT 45-60 seconds.** Runtime errors appear AFTER "Bundled Xms" — not before. Do NOT check immediately after seeing "Bundled".
 

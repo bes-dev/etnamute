@@ -5,12 +5,18 @@
 #
 # Prerequisites:
 # - Maestro installed (curl -fsSL "https://get.maestro.mobile.dev" | bash)
-# - iOS Simulator available
+# - iOS Simulator (macOS) or Android Emulator (Linux) available
 # - .maestro/ directory with yaml flows in the app directory
 
 set -uo pipefail
 
 APP_DIR="${1:?Usage: scripts/smoke.sh apps/<slug>}"
+
+# Detect platform
+case "$(uname -s)" in
+  Darwin) PLATFORM="ios" ;;
+  *)      PLATFORM="android" ;;
+esac
 
 # Cleanup on any exit (success, failure, or signal)
 METRO_PID=""
@@ -19,8 +25,10 @@ cleanup() {
   [ -n "$METRO_PID" ] && kill $METRO_PID 2>/dev/null || true
   [ -n "$BUILD_PID" ] && kill $BUILD_PID 2>/dev/null || true
   lsof -ti:8081 2>/dev/null | xargs kill -9 2>/dev/null || true
-  xcrun simctl shutdown all 2>/dev/null || true
-  osascript -e 'quit app "Simulator"' 2>/dev/null || true
+  if [ "$PLATFORM" = "ios" ]; then
+    xcrun simctl shutdown all 2>/dev/null || true
+    osascript -e 'quit app "Simulator"' 2>/dev/null || true
+  fi
 }
 trap cleanup EXIT
 
@@ -58,37 +66,68 @@ if [ "$FLOW_COUNT" -eq 0 ]; then
 fi
 
 echo ""
-echo "=== Maestro Smoke Test: $(basename $APP_DIR) ==="
+echo "=== Maestro Smoke Test: $(basename $APP_DIR) [${PLATFORM}] ==="
 echo ""
 
-# Ensure prebuild exists
-if [ ! -d "ios" ]; then
-  echo "Running expo prebuild..."
-  npx expo prebuild --platform ios --clean 2>&1 | tail -3
+if [ "$PLATFORM" = "ios" ]; then
+  # --- macOS: iOS ---
+
+  # Ensure prebuild exists
+  if [ ! -d "ios" ]; then
+    echo "Running expo prebuild..."
+    npx expo prebuild --platform ios --clean 2>&1 | tail -3
+  fi
+
+  # Kill Simulator.app to prevent GUI windows
+  osascript -e 'quit app "Simulator"' 2>/dev/null || true
+  sleep 1
+
+  # Boot simulator headless (no GUI window)
+  BOOTED=$(xcrun simctl list devices booted | grep -c "Booted" || true)
+  if [ "$BOOTED" -eq 0 ]; then
+    echo "Booting simulator (headless)..."
+    DEVICE_ID=$(xcrun simctl list devices available | grep "iPhone" | head -1 | grep -oE '[A-F0-9-]{36}')
+    xcrun simctl boot "$DEVICE_ID" 2>/dev/null || true
+    sleep 5
+  fi
+
+  # Build and install app
+  echo "Building app..."
+  npx expo run:ios --no-bundler 2>&1 > /tmp/etnamute-smoke-build.log &
+  BUILD_PID=$!
+
+else
+  # --- Linux: Android ---
+
+  # Ensure prebuild exists
+  if [ ! -d "android" ]; then
+    echo "Running expo prebuild..."
+    npx expo prebuild --platform android --clean 2>&1 | tail -3
+  fi
+
+  # Check if emulator is running, start if not
+  if ! adb devices 2>/dev/null | grep -q "emulator"; then
+    echo "Starting Android emulator..."
+    AVD_NAME=$(emulator -list-avds 2>/dev/null | head -1)
+    if [ -z "$AVD_NAME" ]; then
+      echo -e "${RED}No Android AVD found. Create one with Android Studio.${NC}"
+      exit 1
+    fi
+    emulator -avd "$AVD_NAME" -no-window -no-audio -no-boot-anim &
+    adb wait-for-device
+    sleep 10
+  fi
+
+  # Build and install app
+  echo "Building app..."
+  npx expo run:android --no-bundler 2>&1 > /tmp/etnamute-smoke-build.log &
+  BUILD_PID=$!
 fi
-
-# Kill Simulator.app to prevent GUI windows
-osascript -e 'quit app "Simulator"' 2>/dev/null || true
-sleep 1
-
-# Boot simulator headless (no GUI window)
-BOOTED=$(xcrun simctl list devices booted | grep -c "Booted" || true)
-if [ "$BOOTED" -eq 0 ]; then
-  echo "Booting simulator (headless)..."
-  DEVICE_ID=$(xcrun simctl list devices available | grep "iPhone" | head -1 | grep -oE '[A-F0-9-]{36}')
-  xcrun simctl boot "$DEVICE_ID" 2>/dev/null || true
-  sleep 5
-fi
-
-# Start expo in background
-echo "Starting app..."
-npx expo run:ios --no-bundler 2>&1 > /tmp/etnamute-smoke-build.log &
-BUILD_PID=$!
 
 # Wait for build to complete
 echo "Waiting for build (this may take a few minutes on first run)..."
 for i in $(seq 1 120); do
-  if grep -q "Build Succeeded\|Installing.*app\|Installed" /tmp/etnamute-smoke-build.log 2>/dev/null; then
+  if grep -q "Build Succeeded\|Installing.*app\|Installed\|BUILD SUCCESSFUL" /tmp/etnamute-smoke-build.log 2>/dev/null; then
     break
   fi
   if ! kill -0 $BUILD_PID 2>/dev/null; then

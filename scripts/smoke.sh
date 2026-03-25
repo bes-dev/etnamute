@@ -70,7 +70,7 @@ echo "=== Maestro Smoke Test: $(basename $APP_DIR) [${PLATFORM}] ==="
 echo ""
 
 if [ "$PLATFORM" = "ios" ]; then
-  # --- macOS: iOS ---
+  # --- macOS: iOS (fully headless — no Simulator.app GUI) ---
 
   # Ensure prebuild exists
   if [ ! -d "ios" ]; then
@@ -83,18 +83,55 @@ if [ "$PLATFORM" = "ios" ]; then
   sleep 1
 
   # Boot simulator headless (no GUI window)
+  DEVICE_ID=$(xcrun simctl list devices available | grep "iPhone" | head -1 | grep -oE '[A-F0-9-]{36}')
   BOOTED=$(xcrun simctl list devices booted | grep -c "Booted" || true)
   if [ "$BOOTED" -eq 0 ]; then
     echo "Booting simulator (headless)..."
-    DEVICE_ID=$(xcrun simctl list devices available | grep "iPhone" | head -1 | grep -oE '[A-F0-9-]{36}')
     xcrun simctl boot "$DEVICE_ID" 2>/dev/null || true
     sleep 5
   fi
 
-  # Build and install app
-  echo "Building app..."
-  npx expo run:ios --no-bundler 2>&1 > /tmp/etnamute-smoke-build.log &
+  # Resolve scheme and bundle ID from Xcode project
+  XCWORKSPACE=$(find ios -name "*.xcworkspace" -maxdepth 1 | head -1)
+  SCHEME=$(xcodebuild -workspace "$XCWORKSPACE" -list 2>/dev/null | grep -A 10 "Schemes:" | grep -v "Schemes:" | head -1 | xargs)
+  BUNDLE_ID=$(grep -A 1 "PRODUCT_BUNDLE_IDENTIFIER" ios/*.xcodeproj/project.pbxproj 2>/dev/null | grep -oE '"[^"]*"' | head -1 | tr -d '"' || echo "")
+
+  # If bundle ID not found in pbxproj, try app.config.js
+  if [ -z "$BUNDLE_ID" ]; then
+    BUNDLE_ID=$(node -e "const c = require('./app.config.js'); console.log(c.expo?.ios?.bundleIdentifier || c.ios?.bundleIdentifier || '')" 2>/dev/null || echo "")
+  fi
+
+  # Build with xcodebuild (never opens Simulator.app)
+  echo "Building app with xcodebuild..."
+  xcodebuild \
+    -workspace "$XCWORKSPACE" \
+    -scheme "$SCHEME" \
+    -configuration Debug \
+    -sdk iphonesimulator \
+    -destination "id=$DEVICE_ID" \
+    -derivedDataPath /tmp/etnamute-build \
+    build \
+    2>&1 > /tmp/etnamute-smoke-build.log &
   BUILD_PID=$!
+
+  # Wait for xcodebuild to finish
+  echo "Waiting for build (this may take a few minutes on first run)..."
+  wait $BUILD_PID || true
+  BUILD_PID=""
+
+  # Find and install the .app
+  APP_PATH=$(find /tmp/etnamute-build -name "*.app" -path "*Debug-iphonesimulator*" | head -1)
+  if [ -z "$APP_PATH" ]; then
+    echo -e "${RED}Build failed — no .app found${NC}"
+    cat /tmp/etnamute-smoke-build.log | tail -20
+    exit 1
+  fi
+
+  echo "Installing app..."
+  xcrun simctl install "$DEVICE_ID" "$APP_PATH"
+
+  echo "Launching app..."
+  xcrun simctl launch "$DEVICE_ID" "$BUNDLE_ID" 2>/dev/null || true
 
 else
   # --- Linux: Android ---
@@ -122,19 +159,18 @@ else
   echo "Building app..."
   npx expo run:android --no-bundler 2>&1 > /tmp/etnamute-smoke-build.log &
   BUILD_PID=$!
+  # Wait for Android build
+  echo "Waiting for build (this may take a few minutes on first run)..."
+  for i in $(seq 1 120); do
+    if grep -q "BUILD SUCCESSFUL\|Installing.*app\|Installed" /tmp/etnamute-smoke-build.log 2>/dev/null; then
+      break
+    fi
+    if ! kill -0 $BUILD_PID 2>/dev/null; then
+      break
+    fi
+    sleep 2
+  done
 fi
-
-# Wait for build to complete
-echo "Waiting for build (this may take a few minutes on first run)..."
-for i in $(seq 1 120); do
-  if grep -q "Build Succeeded\|Installing.*app\|Installed\|BUILD SUCCESSFUL" /tmp/etnamute-smoke-build.log 2>/dev/null; then
-    break
-  fi
-  if ! kill -0 $BUILD_PID 2>/dev/null; then
-    break
-  fi
-  sleep 2
-done
 
 # Start Metro separately in background (no dev tools)
 REACT_NATIVE_DEVTOOLS_PORT=0 npx expo start --no-dev > /tmp/etnamute-smoke-metro.log 2>&1 &

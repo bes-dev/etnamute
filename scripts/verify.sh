@@ -103,16 +103,22 @@ cleanup_runtime() {
 trap cleanup_runtime EXIT
 
 if [ "$PLATFORM" = "ios" ]; then
-  # macOS: iOS Simulator
+  # macOS: iOS Simulator (headless — no Simulator.app GUI)
   osascript -e 'quit app "Simulator"' 2>/dev/null || true
   sleep 1
 
   DEVICE_ID=$(xcrun simctl list devices available | grep "iPhone" | head -1 | grep -oE '[A-F0-9-]{36}')
   xcrun simctl boot "$DEVICE_ID" 2>/dev/null || true
 
-  echo "Starting app on iOS simulator (headless)..."
-  REACT_NATIVE_DEVTOOLS_PORT=0 npx expo start --ios --no-dev > "$RUNTIME_LOG" 2>&1 &
+  # Start Metro only (no --ios flag which opens Simulator.app)
+  echo "Starting Metro bundler..."
+  REACT_NATIVE_DEVTOOLS_PORT=0 npx expo start --no-dev > "$RUNTIME_LOG" 2>&1 &
   EXPO_PID=$!
+  sleep 10
+
+  # Open app in simulator via URL (headless — no GUI)
+  IP=$(hostname -I 2>/dev/null | awk '{print $1}' || ipconfig getifaddr en0 2>/dev/null || echo "localhost")
+  xcrun simctl openurl "$DEVICE_ID" "exp://${IP}:8081" 2>/dev/null || true
 else
   # Linux: Android Emulator
   # Check if emulator is running
@@ -128,9 +134,14 @@ else
     sleep 10
   fi
 
-  echo "Starting app on Android emulator..."
-  REACT_NATIVE_DEVTOOLS_PORT=0 npx expo start --android --no-dev > "$RUNTIME_LOG" 2>&1 &
+  # Start Metro only
+  echo "Starting Metro bundler..."
+  REACT_NATIVE_DEVTOOLS_PORT=0 npx expo start --no-dev > "$RUNTIME_LOG" 2>&1 &
   EXPO_PID=$!
+  sleep 10
+
+  # Open app on emulator via adb
+  adb shell am start -a android.intent.action.VIEW -d "exp://localhost:8081" 2>/dev/null || true
 fi
 
 echo "Waiting 45 seconds for runtime errors..."

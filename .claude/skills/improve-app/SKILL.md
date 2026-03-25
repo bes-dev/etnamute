@@ -98,6 +98,9 @@ Execute in this order:
 
 Run the verify loop from `pipeline/qa.md` (reads testing level from `apps/<slug>/spec/testing-level.txt`).
 
+If the change affects UI: also read `.claude/skills/visual-review/SKILL.md` and review screenshots of affected screens.
+If the change adds/removes interactive elements: read `.claude/skills/interaction-map/SKILL.md` to verify no broken promises were introduced.
+
 ### Step 6: Report
 
 Show summary (in user's language):

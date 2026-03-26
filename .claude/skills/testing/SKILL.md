@@ -12,9 +12,25 @@ Read `.claude/skills/interaction-map/SKILL.md` and build the full interaction ma
 Output: table of all interactive elements with effect types.
 Report any bugs found (broken promises).
 
+## Step 1.5: Scan for gesture interactions
+
+Grep the codebase for gesture-based components that are invisible in the UI but crash if not set up correctly:
+
+```
+Swipeable, ReanimatedSwipeable, PanGestureHandler, LongPressGestureHandler,
+FlingGestureHandler, PinchGestureHandler, Draggable, pull-to-refresh (RefreshControl)
+```
+
+For each one found:
+- Verify `GestureHandlerRootView` wraps the app root
+- Verify Reanimated babel plugin is configured (if using ReanimatedSwipeable)
+- Add to the test plan: this gesture MUST have a Maestro flow that physically executes it
+
+Gestures are a blind spot — tsc, bundler, unit tests, and runtime log checks all pass while the app crashes on first swipe.
+
 ## Step 2: Generate tests
 
-Based on the interaction map:
+Based on the interaction map + gesture scan:
 
 **Unit tests** (`__tests__/`):
 - Every "state without visual" or "side effect" element → `fireEvent.press` → verify store/mock
@@ -32,6 +48,7 @@ Then generate flows from the interaction map:
 *Functional* (tags: functional): one flow per screen or feature group
 *Persistence* (tags: persistence): add data → killApp → relaunch → verify
 *Errors* (tags: errors): invalid input → error shown → fix → success
+*Gestures* (tags: functional): for each gesture found in Step 1.5 — swipe/long-press/drag → verify effect + verify no crash
 
 **RULES:**
 - Copy the flow template from maestro skill — do NOT improvise structure

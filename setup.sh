@@ -8,7 +8,7 @@ DIM='\033[2m'
 NC='\033[0m'
 
 ok()   { echo -e "  ${GREEN}✓${NC} $1"; }
-fail() { echo -e "  ${RED}✗${NC} $1"; }
+fail() { echo -e "  ${RED}✗${NC} $1"; return 1; }
 warn() { echo -e "  ${YELLOW}!${NC} $1"; }
 info() { echo -e "  ${DIM}$1${NC}"; }
 
@@ -17,53 +17,54 @@ echo "Etnamute — Setup"
 echo "==================="
 echo ""
 
-MISSING=()
+FAILED=0
 
-# --- Core (required) ---
+# --- Core ---
 
-echo "Core tools:"
+echo "Core:"
 
 if command -v node &>/dev/null; then
   ok "Node.js $(node -v)"
 else
-  fail "Node.js — install from https://nodejs.org"
-  MISSING+=(node)
+  echo ""
+  fail "Node.js not found. Install from https://nodejs.org" || FAILED=1
 fi
 
 if command -v npm &>/dev/null; then
   ok "npm $(npm -v)"
 else
-  fail "npm"
-  MISSING+=(npm)
+  fail "npm not found" || FAILED=1
 fi
 
 if command -v claude &>/dev/null; then
   ok "Claude Code"
 else
-  fail "Claude Code — npm install -g @anthropic-ai/claude-code"
-  MISSING+=(claude)
+  info "Installing Claude Code..."
+  npm install -g @anthropic-ai/claude-code
+  if command -v claude &>/dev/null; then
+    ok "Claude Code installed"
+  else
+    fail "Claude Code install failed — npm install -g @anthropic-ai/claude-code" || FAILED=1
+  fi
 fi
 
 echo ""
 
-# --- Python + mcpdoc (required for docs MCP) ---
+# --- Python + mcpdoc ---
 
-echo "Documentation MCP:"
+echo "Documentation (mcpdoc):"
 
 if command -v python3 &>/dev/null; then
   ok "Python $(python3 --version 2>&1 | cut -d' ' -f2)"
 else
-  fail "Python 3 — brew install python3"
-  MISSING+=(python3)
+  fail "Python 3 not found — brew install python3 / apt install python3" || FAILED=1
 fi
 
 if [ ! -d ".venv" ]; then
   info "Creating .venv..."
   python3 -m venv .venv
-  ok "Virtual environment created"
-else
-  ok "Virtual environment exists"
 fi
+ok "Virtual environment"
 
 source .venv/bin/activate
 
@@ -75,49 +76,94 @@ else
   if pip show mcpdoc &>/dev/null 2>&1; then
     ok "mcpdoc installed"
   else
-    fail "mcpdoc — pip install mcpdoc"
-    MISSING+=(mcpdoc)
+    fail "mcpdoc install failed" || FAILED=1
   fi
 fi
 
 echo ""
 
-# --- Build tools (optional, for Phase 5: Release) ---
+# --- Maestro (required for Full testing level) ---
 
-echo "Build tools (optional, for release):"
+echo "Testing (Maestro):"
+
+MAESTRO_BIN="$HOME/.maestro/bin/maestro"
+
+if [ -x "$MAESTRO_BIN" ] || command -v maestro &>/dev/null; then
+  ok "Maestro $($MAESTRO_BIN --version 2>/dev/null || maestro --version 2>/dev/null)"
+else
+  info "Installing Maestro..."
+  curl -fsSL "https://get.maestro.mobile.dev" | bash
+  if [ -x "$MAESTRO_BIN" ]; then
+    ok "Maestro installed"
+  else
+    fail "Maestro install failed — curl -fsSL https://get.maestro.mobile.dev | bash" || FAILED=1
+  fi
+fi
+
+echo ""
+
+# --- Platform tools ---
+
+echo "Platform:"
+
+case "$(uname -s)" in
+  Darwin)
+    if command -v xcrun &>/dev/null; then
+      ok "Xcode CLI tools"
+    else
+      info "Installing Xcode CLI tools..."
+      xcode-select --install 2>/dev/null || true
+      warn "Xcode CLI tools — follow the dialog to install, then re-run setup.sh"
+    fi
+    ;;
+  *)
+    if [ -d "$HOME/Android/Sdk" ] || [ -d "$HOME/Library/Android/sdk" ] || [ -n "${ANDROID_HOME:-}" ]; then
+      ok "Android SDK"
+    else
+      warn "Android SDK — install Android Studio from https://developer.android.com/studio"
+    fi
+    if command -v adb &>/dev/null; then
+      ok "adb"
+    else
+      warn "adb not in PATH — add Android SDK platform-tools to PATH"
+    fi
+    if command -v emulator &>/dev/null; then
+      ok "Android emulator"
+    else
+      warn "emulator not in PATH — add Android SDK emulator to PATH"
+    fi
+    ;;
+esac
+
+echo ""
+
+# --- Optional ---
+
+echo "Optional:"
 
 if command -v fastlane &>/dev/null; then
   ok "fastlane $(fastlane --version 2>/dev/null | head -1 | grep -oE '[0-9]+\.[0-9]+\.[0-9]+')"
 else
-  warn "fastlane — brew install fastlane"
+  warn "fastlane (for /release-app) — brew install fastlane"
 fi
 
-if command -v maestro &>/dev/null; then
-  ok "maestro"
+if [ -n "${STITCH_API_KEY:-}" ]; then
+  ok "Google Stitch API key set"
 else
-  warn "maestro — curl -fsSL https://get.maestro.mobile.dev | bash"
-fi
-
-if command -v xcrun &>/dev/null; then
-  ok "Xcode CLI tools"
-else
-  warn "Xcode CLI tools — xcode-select --install"
-fi
-
-if [ -d "$HOME/Library/Android/sdk" ] || [ -n "${ANDROID_HOME:-}" ]; then
-  ok "Android SDK"
-else
-  warn "Android SDK — install Android Studio"
+  warn "STITCH_API_KEY not set (for /design-app) — export STITCH_API_KEY=<key from stitch.withgoogle.com/settings>"
 fi
 
 echo ""
 
 # --- Result ---
 
-if [ ${#MISSING[@]} -eq 0 ]; then
+if [ $FAILED -eq 0 ]; then
   echo -e "${GREEN}Ready.${NC} Run 'claude' to start building."
+  echo ""
+  echo "Quick start:"
+  echo "  claude"
+  echo "  > /build-app habit tracker for students"
 else
-  echo -e "${RED}Missing required tools: ${MISSING[*]}${NC}"
-  echo "Install them and run ./setup.sh again."
+  echo -e "${RED}Some required tools could not be installed. Fix the errors above and re-run ./setup.sh${NC}"
   exit 1
 fi

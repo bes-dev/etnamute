@@ -186,6 +186,32 @@ Y-coordinate: **93%** (works for standard iOS tab bar with safe area).
     timeout: 10000
 ```
 
+### Swipe gesture → verify effect
+```yaml
+# Swipe left on an item to reveal action
+- swipe:
+    from: { id: "article-card-1" }
+    direction: LEFT
+- extendedWaitUntil:
+    visible: "Delete"
+    timeout: 5000
+- tapOn: "Delete"
+- assertNotVisible: "Article Title"
+```
+
+### Pull to refresh
+```yaml
+- swipe:
+    from: { id: "article-list" }
+    direction: DOWN
+    duration: 1000
+- extendedWaitUntil:
+    visible: { id: "article-list" }
+    timeout: 10000
+```
+
+**CRITICAL: Every gesture interaction (swipe, long-press, drag) MUST have a Maestro flow.** Gestures depend on native modules (GestureHandler, Reanimated) that can crash at runtime even when tsc, bundler, and unit tests all pass. The ONLY way to catch these crashes is to physically execute the gesture on a simulator.
+
 ## Expo Router Gotchas
 
 - **Tab bar**: point-based tapping only (see table above)

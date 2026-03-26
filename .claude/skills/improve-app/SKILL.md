@@ -62,6 +62,7 @@ Execute in this order:
 - New feature → write store tests, screen render test
 - Changed feature → update affected tests
 - Bug fix → write regression test that catches the bug
+- **New gesture interaction (swipe, long-press, drag) → MUST add a Maestro flow** that physically executes the gesture. Unit tests and runtime log checks cannot catch gesture-related crashes (missing GestureHandlerRootView, Reanimated babel plugin, etc.)
 
 **4. When removing a feature:**
 - Remove from PRD §4

@@ -5,7 +5,7 @@ description: Analyze every interactive UI element — classify effects, detect b
 
 Build an interaction map for every interactive element in the app.
 
-For EVERY `onPress`, `onValueChange`, `onSubmit` in the codebase:
+For EVERY interactive element in the codebase — `onPress`, `onValueChange`, `onSubmit`, AND gesture-based interactions (`Swipeable`, `LongPressGestureHandler`, `PanGestureHandler`, `Draggable`, swipe-to-delete, pull-to-refresh):
 
 1. **Determine what a USER expects** from the element's label, type, and context — NOT from reading the handler code. Infer expected behavior from what the control promises visually.
 
@@ -22,6 +22,7 @@ For EVERY `onPress`, `onValueChange`, `onSubmit` in the codebase:
 | **Navigation** | "View Details" → detail screen opens | Maestro: tap → `assertVisible` destination |
 | **State without immediate visual** | Store update, preference save | Unit test: `fireEvent.press` → `expect(store.field).toBe(value)` |
 | **Side effect without visual** | Analytics event, prefetch, log | Unit test: `expect(mockFn).toHaveBeenCalled()` |
+| **Gesture** | Swipe to delete, pull to refresh, long-press menu | Maestro: `swipe` → verify effect. **Gestures MUST be tested via Maestro** — they require native modules (GestureHandler, Reanimated) that can crash at runtime without any signal from tsc/bundler/unit tests |
 | **Broken promise** | Control's label implies an effect that doesn't happen | **Report as BUG** |
 
 5. For state/visual effects that span multiple screens — list ALL screens that depend on the changed state
